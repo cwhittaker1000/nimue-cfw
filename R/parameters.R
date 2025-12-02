@@ -228,6 +228,7 @@ parameters <- function(
   # Collate Parameters Into List
   pars <- c(mod_init,
             list(N_age = length(population_list[[1]]),
+                 N_locations = length(population_list),
                  gamma_E = gamma_E,
                  gamma_IMild = gamma_IMild,
                  gamma_ICase = gamma_ICase,

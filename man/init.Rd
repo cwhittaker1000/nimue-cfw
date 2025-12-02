@@ -4,12 +4,9 @@
 \alias{init}
 \title{Check and set up initial values for vaccine model}
 \usage{
-init(population, seeding_cases, seeding_age_order = NULL, init = NULL)
+init(population_list, seeding_cases, seeding_age_order = NULL, init = NULL)
 }
 \arguments{
-\item{population}{Population vector (for each age group). Default = NULL,
-which will cause population to be sourced from \code{country}}
-
 \item{seeding_cases}{Initial number of cases seeding the epidemic}
 
 \item{seeding_age_order}{Vector specifying the order in which seeds are allocated to ages.

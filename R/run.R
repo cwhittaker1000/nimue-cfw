@@ -218,7 +218,7 @@ run <- function(
 
   # Set model type
   replicates <- 1
-  mod_gen = vaccine_simplified
+  mod_gen = vaccine_simplified_multiloc
 
   # Running the Model
   pars$prob_hosp <- pars$prob_hosp[1, , ]

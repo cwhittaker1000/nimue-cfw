@@ -260,7 +260,7 @@ tt_beta[] <- user()
 beta_set[] <- user()
 dim(beta) <- N_locations
 dim(tt_beta) <- user()
-dim(beta_set) <- length(tt_beta)
+dim(beta_set) <- N_locations
 
 # Generating Force of Infection
 temp_rel[,,] <- (IMild[i,j,k] * rel_infectiousness_vaccinated[i,j]) + (ICase[i,j,k] * rel_infectiousness_vaccinated[i,j])
