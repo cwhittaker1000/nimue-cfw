@@ -15,8 +15,11 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
   # wrap param func in order to remove unused arguments (dt)
   # and then add in all the default that are passed to params usually
   # from run so have to add here
-  parameters_func <- function(country, population, dt,
-                              contact_matrix_set, tt_contact_matrix,
+  parameters_func <- function(countries,
+                              populations,
+                              dt,
+                              contact_matrix,
+                              contact_matrix_set,
 
                               # vaccine defaults that are just empty in parms so declare here
                               dur_V = vaccine_pars$dur_V,
@@ -38,19 +41,15 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
                               dur_IHosp = durs$dur_IHosp,
 
                               # seeding cases default
-                              seeding_cases = 5,
+                              seeding_cases = NULL,
 
                               ...) {
 
     pars <- parameters(
-      country = country,
-               population = population,
+               countries = countries,
+               populations = populations,
+               contact_matrix = contact_matrix,
                contact_matrix_set = contact_matrix_set,
-               tt_contact_matrix = tt_contact_matrix,
-               hosp_bed_capacity = hosp_bed_capacity,
-               tt_hosp_beds = tt_hosp_beds,
-               ICU_bed_capacity = ICU_bed_capacity,
-               tt_ICU_beds = tt_ICU_beds,
                dur_E = dur_E,
                dur_IMild = dur_IMild,
                dur_ICase = dur_ICase,
@@ -78,28 +77,33 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
   }
 
   # wrap run func correctly
-  run_func <- function(country, population, dt,
-                       contact_matrix_set, tt_contact_matrix,
+  run_func <- function(countries,
+                       populations,
+                       dt,
+                       contact_matrix = contact_matrix,
+                       contact_matrix_set,
+                       tt_contact_matrix,
                        replicates = 1,
                        day_return = TRUE,
                        time_period = 365,
                        ...) {
 
-    out <- nimue::run(country = country,
-               contact_matrix_set = contact_matrix_set,
-               tt_contact_matrix = tt_contact_matrix,
-               population = population,
-               replicates = 1,
-               time_period = time_period,
-               use_dde = use_dde,
-               ...)
+    out <- nimue::run(countries = countries,
+                      contact_matrix = contact_matrix,
+                      contact_matrix_set = contact_matrix_set,
+                      tt_contact_matrix = tt_contact_matrix,
+                      population = population,
+                      replicates = 1,
+                      time_period = time_period,
+                      use_dde = use_dde,
+                      ...)
 
     return(out)
 
   }
 
   odin_model <- function(user, unused_user_action) {
-    vaccine_simplified$new(user = user, use_dde = use_dde, unused_user_action = "ignore")
+    vaccine_simplified_multiloc$new(user = user, use_dde = use_dde, unused_user_action = "ignore")
   }
 
   model <- list(odin_model = odin_model,

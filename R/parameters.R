@@ -54,13 +54,31 @@ vaccine_pars <- default_vaccine_pars()
 #' @details All durations are in days.
 #'
 #' @inheritParams run
+## need to build in time-varying Rt
+#
+# countries <- c("France", "United Kingdom")
+# dur_E <- durs$dur_E
+# dur_R <- durs$dur_R
+# dur_IHosp <- durs$dur_IHosp
+# dur_ICase <- durs$dur_ICase
+# dur_IMild <- durs$dur_IMild
+# dur_V <- Inf
+#
+# prob_hosp = probs$prob_hosp
+# prob_death_hosp = probs$prob_death_hosp
+# p_dist = probs$p_dist
+# rel_infectiousness = probs$rel_infectiousness
+# rel_infectiousness_vaccinated = probs$rel_infectiousness_vaccinated
+#
+# dur_V <- vaccine_pars$dur_V
+# vaccine_efficacy_infection <- vaccine_pars$vaccine_efficacy_infection
+# tt_vaccine_efficacy_infection <- vaccine_pars$tt_vaccine_efficacy_infection
+# vaccine_efficacy_disease <- vaccine_pars$vaccine_efficacy_disease
+# tt_vaccine_efficacy_disease <- vaccine_pars$tt_vaccine_efficacy_disease
 parameters <- function(
 
   # Demography
-  country = NULL,
-  population = NULL,
-  tt_contact_matrix = 0,
-  contact_matrix_set = NULL,
+  countries = NULL,
 
   # Transmission
   R0 = 3,
@@ -99,44 +117,46 @@ parameters <- function(
   vaccine_coverage_mat) {
 
   # Handle country population args
-  cpm <- squire:::parse_country_population_mixing_matrix(country = country,
-                                                         population = population,
-                                                         contact_matrix_set = contact_matrix_set)
-  country <- cpm$country
-  population <- cpm$population
-  contact_matrix_set <- cpm$contact_matrix_set
-
-  # Standardise contact matrix set
-  if(is.matrix(contact_matrix_set)){
-    contact_matrix_set <- list(contact_matrix_set)
-  }
-
-  # populate contact matrix set if not provided
-  if (length(contact_matrix_set) == 1) {
-    baseline <- contact_matrix_set[[1]]
-    contact_matrix_set <- vector("list", length(tt_contact_matrix))
-    for(i in seq_along(tt_contact_matrix)) {
-      contact_matrix_set[[i]] <- baseline
-    }
+  population_list <- vector(mode = "list", length = length(countries))
+  contact_matrix_list <- vector(mode = "list", length = length(countries))
+  for (i in 1:length(countries)) {
+    cpm <- parse_country_population_mixing_matrix(country = countries[i],
+                                                  population = NULL,
+                                                  contact_matrix_set = NULL)
+    population_list[[i]] <- cpm$population
+    contact_matrix_list[[i]] <- cpm$contact_matrix_set  # Keep as list
   }
 
   # Initial state and matrix formatting
   # ----------------------------------------------------------------------------
 
   # Initialise initial conditions
-  mod_init <- init(population, seeding_cases, seeding_age_order, init)
+  mod_init <- init(population_list, seeding_cases, seeding_age_order, init)
 
   # Convert contact matrices to input matrices
-  matrices_set <- squire:::matrix_set_explicit(contact_matrix_set, population)
+  stopifnot(length(population_list) == length(contact_matrix_list))
+  matrices_set_list <- Map(
+    function(contact_set, pop) {
+      matrix_set_explicit(list(contact_set), pop)
+    },
+    contact_matrix_list,
+    population_list
+  )
+  matrices_set_array <- array(
+    unlist(matrices_set_list, use.names = FALSE),
+    dim = c(
+      nrow(matrices_set_list[[1]]),
+      ncol(matrices_set_list[[1]]),
+      length(matrices_set_list)
+    )
+  )
+
 
   # If a vector is put in for matrix targeting
-  if(is.vector(vaccine_coverage_mat)){
-    vaccine_coverage_mat <- matrix(vaccine_coverage_mat, ncol = 17)
-  }
-
-  # Input checks
-  # ----------------------------------------------------------------------------
-  mc <- squire:::matrix_check(population[-1], contact_matrix_set)
+  ### NOTE: COME BACK TO THIS!!!
+  # if(is.vector(vaccine_coverage_mat)){
+  #   vaccine_coverage_mat <- matrix(vaccine_coverage_mat, ncol = 17)
+  # }
 
   # Convert and Generate Parameters As Required
   # ----------------------------------------------------------------------------
@@ -149,15 +169,30 @@ parameters <- function(
   gamma_V <- 2 * 1/dur_V
   gamma_vaccine_delay <- 2 * 1 / dur_vaccine_delay
 
-  if (is.null(beta_set)) {
-    baseline_matrix <- squire:::process_contact_matrix_scaled_age(contact_matrix_set[[1]], population)
-    beta_set <- beta_est_infectiousness(dur_IMild = dur_IMild,
-                                        dur_ICase = dur_ICase,
-                                        prob_hosp = prob_hosp,
-                                        mixing_matrix = baseline_matrix,
-                                        rel_infectiousness = rel_infectiousness,
-                                        R0 = R0)
+  ## Handle R0: allow scalar or one per country
+  if (length(R0) == 1L) {
+    R0_vec <- rep(R0, length(countries))
+  } else if (length(R0) == length(countries)) {
+    R0_vec <- R0
+  } else {
+    stop("R0 must be either a scalar or have length equal to the number of countries")
   }
+
+  ## Check this is actually correct!!
+  ## build in tt_R0 properly here later on
+  beta_set <- vapply(seq_len(length(countries)), function(i) {
+
+    ## Country-specific baseline mixing matrix
+    baseline_matrix <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], population_list[[i]]) ## check I'm inputting the right matrix in here!
+
+    ## Country-specific beta, based on that matrix and R0
+    beta_est_infectiousness(dur_IMild = dur_IMild, dur_ICase = dur_ICase,
+                            prob_hosp = prob_hosp,
+                            mixing_matrix = baseline_matrix,
+                            rel_infectiousness = rel_infectiousness,
+                            R0 = R0_vec[i])
+    }, FUN.VALUE = numeric(1)
+  )
 
   # normalise to sum to 1
   p_dist <- matrix(rep(p_dist, 6), nrow = 17, ncol = 6)
@@ -165,7 +200,6 @@ parameters <- function(
 
   # Format vaccine-specific parameters
   gamma_vaccine <- c(0, gamma_vaccine_delay, gamma_vaccine_delay, gamma_V, gamma_V, 0)
-
   rel_infectiousness_vaccinated <- format_rel_inf_vacc_for_odin(rel_infectiousness_vaccinated)
 
   # Vaccine efficacies are now time changing (if specified),
@@ -193,7 +227,7 @@ parameters <- function(
 
   # Collate Parameters Into List
   pars <- c(mod_init,
-            list(N_age = length(population),
+            list(N_age = length(population_list[[1]]),
                  gamma_E = gamma_E,
                  gamma_IMild = gamma_IMild,
                  gamma_ICase = gamma_ICase,
@@ -203,12 +237,10 @@ parameters <- function(
                  rel_infectiousness = rel_infectiousness,
                  rel_infectiousness_vaccinated = rel_infectiousness_vaccinated,
                  p_dist = p_dist,
-                 tt_matrix = tt_contact_matrix,
-                 mix_mat_set = matrices_set,
+                 mix_mat_set = matrices_set_array,
                  tt_beta = tt_R0,
                  beta_set = beta_set,
-                 population = population,
-                 contact_matrix_set = contact_matrix_set,
+                 population_list = population_list,
                  max_vaccine = max_vaccine,
                  tt_vaccine = tt_vaccine,
                  vaccine_efficacy_infection = vaccine_efficacy_infection_odin_array,

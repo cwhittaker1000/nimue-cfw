@@ -139,10 +139,7 @@
 run <- function(
 
   # demography
-  country = NULL,
-  population = NULL,
-  tt_contact_matrix = 0,
-  contact_matrix_set = NULL,
+  countries = NULL,
 
   # transmission
   R0 = 3,
@@ -193,10 +190,7 @@ run <- function(
   set.seed(seed)
 
   # create parameter list
-  pars <- parameters(country = country,
-                     population = population,
-                     tt_contact_matrix = tt_contact_matrix ,
-                     contact_matrix_set = contact_matrix_set,
+  pars <- parameters(countries = countries,
                      R0 = R0,
                      tt_R0 = tt_R0 ,
                      beta_set = beta_set,
