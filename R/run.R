@@ -151,22 +151,13 @@ run <- function(
 
   # initial state, duration, reps
   time_period = 365,
-  replicates = 10,
+  replicates = 1,
   seed = stats::runif(1, 0, 100000000),
 
   # parameters
   # probabilities
   prob_hosp = probs$prob_hosp,
-  prob_hosp_multiplier = probs$prob_hosp_multiplier,
-  tt_prob_hosp_multiplier = probs$tt_prob_hosp_multiplier,
-  prob_severe = probs$prob_severe,
-  prob_severe_multiplier = probs$prob_severe_multiplier,
-  tt_prob_severe_multiplier = probs$tt_prob_severe_multiplier,
-  prob_non_severe_death_treatment = probs$prob_non_severe_death_treatment,
-  prob_non_severe_death_no_treatment = probs$prob_non_severe_death_no_treatment,
-  prob_severe_death_treatment = probs$prob_severe_death_treatment,
-  prob_severe_death_no_treatment = probs$prob_severe_death_no_treatment,
-  p_dist = probs$p_dist,
+  prob_death_hosp = probs$prob_death_hosp,
 
   # onward infectiousness
   rel_infectiousness = probs$rel_infectiousness,
@@ -176,27 +167,9 @@ run <- function(
   dur_E  = durs$dur_E,
   dur_IMild = durs$dur_IMild,
   dur_ICase = durs$dur_ICase,
-
-  # hospital durations
-  dur_get_ox_survive = durs$dur_get_ox_survive,
-  tt_dur_get_ox_survive = durs$tt_dur_get_ox_survive,
-  dur_get_ox_die = durs$dur_get_ox_die,
-  tt_dur_get_ox_die = durs$tt_dur_get_ox_die,
-  dur_not_get_ox_survive = durs$dur_not_get_ox_survive,
-  dur_not_get_ox_die = durs$dur_not_get_ox_die,
-
-  dur_get_mv_survive = durs$dur_get_mv_survive,
-  tt_dur_get_mv_survive = durs$tt_dur_get_mv_survive,
-  dur_get_mv_die = durs$dur_get_mv_die,
-  tt_dur_get_mv_die = durs$tt_dur_get_mv_die,
-  dur_not_get_mv_survive = durs$dur_not_get_mv_survive,
-  dur_not_get_mv_die = durs$dur_not_get_mv_die,
-
-  dur_rec = durs$dur_rec,
+  dur_IHosp = durs$dur_IHosp,
 
   # vaccine
-  dur_R = vaccine_pars$dur_R,
-  tt_dur_R = vaccine_pars$tt_dur_R,
   dur_V = vaccine_pars$dur_V,
   vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
   tt_vaccine_efficacy_infection = vaccine_pars$tt_vaccine_efficacy_infection,
@@ -207,12 +180,7 @@ run <- function(
   dur_vaccine_delay = vaccine_pars$dur_vaccine_delay,
   vaccine_coverage_mat = vaccine_pars$vaccine_coverage_mat,
 
-  # health system capacity
-  hosp_bed_capacity = NULL,
-  ICU_bed_capacity = NULL,
-  tt_hosp_beds = 0,
-  tt_ICU_beds = 0,
-
+  # misc
   seeding_cases = 20,
   seeding_age_order = NULL,
   init = NULL,
@@ -236,40 +204,13 @@ run <- function(
                      seeding_cases = seeding_cases,
                      seeding_age_order = seeding_age_order,
                      prob_hosp = prob_hosp,
-                     tt_prob_hosp_multiplier = tt_prob_hosp_multiplier,
-                     prob_hosp_multiplier = prob_hosp_multiplier,
-                     prob_severe = prob_severe,
-                     prob_severe_multiplier = prob_severe_multiplier,
-                     tt_prob_severe_multiplier = tt_prob_severe_multiplier,
-                     prob_non_severe_death_treatment = prob_non_severe_death_treatment,
-                     prob_non_severe_death_no_treatment = prob_non_severe_death_no_treatment,
-                     prob_severe_death_treatment = prob_severe_death_treatment,
-                     prob_severe_death_no_treatment = prob_severe_death_no_treatment,
-                     p_dist = p_dist,
+                     prob_death_hosp = prob_death_hosp,
                      rel_infectiousness = rel_infectiousness,
                      rel_infectiousness_vaccinated = rel_infectiousness_vaccinated,
                      dur_E = dur_E,
                      dur_IMild = dur_IMild,
                      dur_ICase = dur_ICase,
-                     dur_get_ox_survive = dur_get_ox_survive,
-                     tt_dur_get_ox_survive = tt_dur_get_ox_survive,
-                     dur_get_ox_die = dur_get_ox_die,
-                     tt_dur_get_ox_die = tt_dur_get_ox_die,
-                     dur_not_get_ox_survive = dur_not_get_ox_survive,
-                     dur_not_get_ox_die = dur_not_get_ox_die,
-                     dur_get_mv_survive = dur_get_mv_survive,
-                     tt_dur_get_mv_survive = tt_dur_get_mv_survive,
-                     dur_get_mv_die = dur_get_mv_die,
-                     tt_dur_get_mv_die = tt_dur_get_mv_die,
-                     dur_not_get_mv_survive = dur_not_get_mv_survive,
-                     dur_not_get_mv_die = dur_not_get_mv_die,
-                     dur_rec = dur_rec,
-                     dur_R = dur_R,
-                     tt_dur_R = tt_dur_R,
-                     hosp_bed_capacity = hosp_bed_capacity,
-                     ICU_bed_capacity = ICU_bed_capacity,
-                     tt_hosp_beds = tt_hosp_beds,
-                     tt_ICU_beds = tt_ICU_beds,
+                     dur_IHosp = dur_IHosp,
                      dur_V = dur_V,
                      vaccine_efficacy_infection = vaccine_efficacy_infection,
                      tt_vaccine_efficacy_infection = tt_vaccine_efficacy_infection,
@@ -283,11 +224,12 @@ run <- function(
 
   # Set model type
   replicates <- 1
-  mod_gen = vaccine
+  mod_gen = vaccine_simplified
 
   # Running the Model
-  mod <- mod_gen$new(user = pars, unused_user_action = "ignore",
-                 use_dde = use_dde)
+  pars$prob_hosp <- pars$prob_hosp[1, , ]
+  pars$prob_death_hosp <- pars$prob_death_hosp[1, , ]
+  mod <- mod_gen$new(user = pars, unused_user_action = "ignore", use_dde = use_dde)
 
   # Daily output by default
   t <- round(seq(from = 1, to = time_period))
@@ -300,8 +242,6 @@ run <- function(
   # Summarise inputs
   parameters <- args
   parameters$population <- pars$population
-  parameters$hosp_bed_capacity <- pars$hosp_beds
-  parameters$ICU_bed_capacity <- pars$ICU_beds
   parameters$beta_set <- pars$beta_set
   parameters$seeding_cases <- pars$E1_0
   parameters$contact_matrix_set <- pars$contact_matrix_set
@@ -311,3 +251,4 @@ run <- function(
   return(out)
 
 }
+

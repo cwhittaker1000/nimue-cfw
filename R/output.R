@@ -25,14 +25,8 @@
 #' @export
 format <- function(x,
                    compartments = c("S", "E",
-                                    "IMild", "ICase", "IICU", "IHospital",
-                                    "IRec", "R", "D"),
-                   summaries = c("N",
-                                 "hospitalisations",
-                                 "hospital_demand","hospital_occupancy",
-                                 "ICU_demand", "ICU_occupancy",
-                                 "vaccines", "unvaccinated", "vaccinated", "priorvaccinated",
-                                 "infections", "deaths"),
+                                    "IMild", "ICase", "IHosp",
+                                    "R", "D"),
                    reduce_age = TRUE,
                    date_0 = NULL,
                    replicate = 1){
@@ -55,12 +49,12 @@ format <- function(x,
   # Extract time
   time <- x$output[,index$time, replicate]
 
-  output <- format_internal(x = x, compartments = compartments, summaries = summaries,
+  output <- format_internal(x = x, compartments = compartments,
                             reduce_age = reduce_age, index = index,
                             time = time, replicate = replicate)
 
   # Set levels (order) of output variables
-  output$compartment <- factor(output$compartment, levels = c(compartments, summaries))
+  output$compartment <- factor(output$compartment, levels = c(compartments))
 
   # Add date
   if(!is.null(date_0)){
@@ -85,7 +79,7 @@ format <- function(x,
 #' @param index odin ouput index
 #' @param time time vector
 #' @param replicate outpu replicate number
-format_internal <- function(x, compartments, summaries, reduce_age, index, time,
+format_internal <- function(x, compartments, reduce_age, index, time,
                             replicate){
 
   # Convert cumulative outputs
@@ -96,7 +90,7 @@ format_internal <- function(x, compartments, summaries, reduce_age, index, time,
   names(index)[grepl("_cumu", names(index))] <- sapply(strsplit(names(index)[grepl("_cumu", names(index))], "_"), `[`, 1)
 
   # Select variables and summary outputs
-  get <- c(compartments, summaries)
+  get <- c(compartments)
   get <- get[get %in% names(index)]
   i_select <- index[get]
   # Select outputs, collapsing over vaccine dimension where required

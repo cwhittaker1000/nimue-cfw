@@ -10,23 +10,15 @@
 #' @export
 nimue_deterministic_model <- function(use_dde = TRUE) {
 
-  model_class <- "nimue_model"
-
-  compare_model <- function(model, pars_obs, data) {
-    squire:::compare_output(model, pars_obs, data, type=model_class)
-  }
+  model_class <- "nimue_model_simple"
 
   # wrap param func in order to remove unused arguments (dt)
   # and then add in all the default that are passed to params usually
   # from run so have to add here
   parameters_func <- function(country, population, dt,
                               contact_matrix_set, tt_contact_matrix,
-                              hosp_bed_capacity, tt_hosp_beds,
-                              ICU_bed_capacity, tt_ICU_beds,
 
                               # vaccine defaults that are just empty in parms so declare here
-                              dur_R = vaccine_pars$dur_R,
-                              tt_dur_R = vaccine_pars$tt_dur_R,
                               dur_V = vaccine_pars$dur_V,
                               vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
                               tt_vaccine_efficacy_infection = vaccine_pars$tt_vaccine_efficacy_infection,
@@ -43,21 +35,7 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
                               dur_ICase = durs$dur_ICase,
 
                               # hospital durations
-                              dur_get_ox_survive = durs$dur_get_ox_survive,
-                              tt_dur_get_ox_survive = durs$tt_dur_get_ox_survive,
-                              dur_get_ox_die = durs$dur_get_ox_die,
-                              tt_dur_get_ox_die = durs$tt_dur_get_ox_die,
-                              dur_not_get_ox_survive = durs$dur_not_get_ox_survive,
-                              dur_not_get_ox_die = durs$dur_not_get_ox_die,
-
-                              dur_get_mv_survive = durs$dur_get_mv_survive,
-                              tt_dur_get_mv_survive = durs$tt_dur_get_mv_survive,
-                              dur_get_mv_die = durs$dur_get_mv_die,
-                              tt_dur_get_mv_die = durs$tt_dur_get_mv_die,
-                              dur_not_get_mv_survive = durs$dur_not_get_mv_survive,
-                              dur_not_get_mv_die = durs$dur_not_get_mv_die,
-
-                              dur_rec = durs$dur_rec,
+                              dur_IHosp = durs$dur_IHosp,
 
                               # seeding cases default
                               seeding_cases = 5,
@@ -76,21 +54,7 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
                dur_E = dur_E,
                dur_IMild = dur_IMild,
                dur_ICase = dur_ICase,
-               dur_get_ox_survive = dur_get_ox_survive,
-               tt_dur_get_ox_survive = tt_dur_get_ox_survive,
-               dur_get_ox_die = dur_get_ox_die,
-               tt_dur_get_ox_die = tt_dur_get_ox_die,
-               dur_not_get_ox_survive = dur_not_get_ox_survive,
-               dur_not_get_ox_die = dur_not_get_ox_die,
-               dur_get_mv_survive = dur_get_mv_survive,
-               tt_dur_get_mv_survive = tt_dur_get_mv_survive,
-               dur_get_mv_die = dur_get_mv_die,
-               tt_dur_get_mv_die = tt_dur_get_mv_die,
-               dur_not_get_mv_survive = dur_not_get_mv_survive,
-               dur_not_get_mv_die = dur_not_get_mv_die,
-               dur_rec = dur_rec,
-               dur_R = dur_R,
-               tt_dur_R = tt_dur_R,
+               dur_IHosp = dur_IHosp,
                dur_V = dur_V,
                vaccine_efficacy_infection = vaccine_efficacy_infection,
                tt_vaccine_efficacy_infection = tt_vaccine_efficacy_infection,
@@ -116,8 +80,6 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
   # wrap run func correctly
   run_func <- function(country, population, dt,
                        contact_matrix_set, tt_contact_matrix,
-                       hosp_bed_capacity, tt_hosp_beds,
-                       ICU_bed_capacity, tt_ICU_beds,
                        replicates = 1,
                        day_return = TRUE,
                        time_period = 365,
@@ -126,10 +88,6 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
     out <- nimue::run(country = country,
                contact_matrix_set = contact_matrix_set,
                tt_contact_matrix = tt_contact_matrix,
-               hosp_bed_capacity = hosp_bed_capacity,
-               tt_hosp_beds = tt_hosp_beds,
-               ICU_bed_capacity = ICU_bed_capacity,
-               tt_ICU_beds = tt_ICU_beds,
                population = population,
                replicates = 1,
                time_period = time_period,
@@ -141,7 +99,7 @@ nimue_deterministic_model <- function(use_dde = TRUE) {
   }
 
   odin_model <- function(user, unused_user_action) {
-    vaccine$new(user = user, use_dde = use_dde, unused_user_action = "ignore")
+    vaccine_simplified$new(user = user, use_dde = use_dde, unused_user_action = "ignore")
   }
 
   model <- list(odin_model = odin_model,

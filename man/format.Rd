@@ -6,10 +6,7 @@
 \usage{
 format(
   x,
-  compartments = c("S", "E", "IMild", "ICase", "IICU", "IHospital", "IRec", "R", "D"),
-  summaries = c("N", "hospitalisations", "hospital_demand", "hospital_occupancy",
-    "ICU_demand", "ICU_occupancy", "vaccines", "unvaccinated", "vaccinated",
-    "priorvaccinated", "infections", "deaths"),
+  compartments = c("S", "E", "IMild", "ICase", "IHosp", "R", "D"),
   reduce_age = TRUE,
   date_0 = NULL,
   replicate = 1
@@ -19,6 +16,13 @@ format(
 \item{x}{squire_simulation object}
 
 \item{compartments}{Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names, e.g. \code{c("S", "E1", "E2")}}
+
+\item{reduce_age}{Collapse age-dimension, calculating the total in the
+compartment.}
+
+\item{date_0}{Date of time 0 (e.g. "2020-03-01"), if specified a date column will be added}
+
+\item{replicate}{Which replicate is being formatted. Default = 1}
 
 \item{summaries}{Vector of summary names, which may be:
 \itemize{
@@ -31,13 +35,6 @@ format(
       \item{"ICU_demand}{ Required ICU Beds }
       \item{"vaccinated"}{ Vaccines administered per day}
       }}
-
-\item{reduce_age}{Collapse age-dimension, calculating the total in the
-compartment.}
-
-\item{date_0}{Date of time 0 (e.g. "2020-03-01"), if specified a date column will be added}
-
-\item{replicate}{Which replicate is being formatted. Default = 1}
 }
 \value{
 Formatted long data.frame

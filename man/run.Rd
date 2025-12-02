@@ -13,39 +13,16 @@ run(
   tt_R0 = 0,
   beta_set = NULL,
   time_period = 365,
-  replicates = 10,
+  replicates = 1,
   seed = stats::runif(1, 0, 1e+08),
   prob_hosp = probs$prob_hosp,
-  prob_hosp_multiplier = probs$prob_hosp_multiplier,
-  tt_prob_hosp_multiplier = probs$tt_prob_hosp_multiplier,
-  prob_severe = probs$prob_severe,
-  prob_severe_multiplier = probs$prob_severe_multiplier,
-  tt_prob_severe_multiplier = probs$tt_prob_severe_multiplier,
-  prob_non_severe_death_treatment = probs$prob_non_severe_death_treatment,
-  prob_non_severe_death_no_treatment = probs$prob_non_severe_death_no_treatment,
-  prob_severe_death_treatment = probs$prob_severe_death_treatment,
-  prob_severe_death_no_treatment = probs$prob_severe_death_no_treatment,
-  p_dist = probs$p_dist,
+  prob_death_hosp = probs$prob_death_hosp,
   rel_infectiousness = probs$rel_infectiousness,
   rel_infectiousness_vaccinated = probs$rel_infectiousness_vaccinated,
   dur_E = durs$dur_E,
   dur_IMild = durs$dur_IMild,
   dur_ICase = durs$dur_ICase,
-  dur_get_ox_survive = durs$dur_get_ox_survive,
-  tt_dur_get_ox_survive = durs$tt_dur_get_ox_survive,
-  dur_get_ox_die = durs$dur_get_ox_die,
-  tt_dur_get_ox_die = durs$tt_dur_get_ox_die,
-  dur_not_get_ox_survive = durs$dur_not_get_ox_survive,
-  dur_not_get_ox_die = durs$dur_not_get_ox_die,
-  dur_get_mv_survive = durs$dur_get_mv_survive,
-  tt_dur_get_mv_survive = durs$tt_dur_get_mv_survive,
-  dur_get_mv_die = durs$dur_get_mv_die,
-  tt_dur_get_mv_die = durs$tt_dur_get_mv_die,
-  dur_not_get_mv_survive = durs$dur_not_get_mv_survive,
-  dur_not_get_mv_die = durs$dur_not_get_mv_die,
-  dur_rec = durs$dur_rec,
-  dur_R = vaccine_pars$dur_R,
-  tt_dur_R = vaccine_pars$tt_dur_R,
+  dur_IHosp = durs$dur_IHosp,
   dur_V = vaccine_pars$dur_V,
   vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
   tt_vaccine_efficacy_infection = vaccine_pars$tt_vaccine_efficacy_infection,
@@ -55,10 +32,6 @@ run(
   tt_vaccine = vaccine_pars$tt_vaccine,
   dur_vaccine_delay = vaccine_pars$dur_vaccine_delay,
   vaccine_coverage_mat = vaccine_pars$vaccine_coverage_mat,
-  hosp_bed_capacity = NULL,
-  ICU_bed_capacity = NULL,
-  tt_hosp_beds = 0,
-  tt_ICU_beds = 0,
   seeding_cases = 20,
   seeding_age_order = NULL,
   init = NULL,
@@ -99,43 +72,6 @@ Default = c(0.000744192, 0.000634166,0.001171109, 0.002394593, 0.005346437,
 0.057734879, 0.072422135, 0.101602458, 0.116979814, 0.146099064,
 0.176634654 ,0.180000000)}
 
-\item{prob_hosp_multiplier}{Time varying multiplier to probability of developing
-severe symptoms. Default = 1, which is no change to provided prob_hosp.}
-
-\item{tt_prob_hosp_multiplier}{Timing of changes to multiplier of probability of
-developing severe symptoms. Default = 0}
-
-\item{prob_severe}{Probability of developing severe symptoms by age.
-Default = c(0.05022296,    0.05022296,    0.05022296,    0.05022296,    0.05022296,
-0.05022296,    0.05022296,    0.053214942, 0.05974426,    0.074602879,
-0.103612417, 0.149427991, 0.223777304,    0.306985918,
-0.385779555, 0.461217861, 0.709444444)}
-
-\item{prob_severe_multiplier}{Time varying multiplier to probability of
-hospitalisation. Default = 1, which is no change to provided prob_hosp.}
-
-\item{tt_prob_severe_multiplier}{Timing of changes to multiplier of probability
-of hospitalisation. Default = 0}
-
-\item{prob_non_severe_death_treatment}{Probability of death from non severe
-treated infection.
-Default = c(0.0125702,    0.0125702,    0.0125702,    0.0125702,
-0.0125702,    0.0125702,    0.0125702,    0.013361147,
-0.015104687,    0.019164124,    0.027477519,    0.041762108,
-0.068531658,    0.105302319,    0.149305732,    0.20349534,    0.5804312)}
-
-\item{prob_non_severe_death_no_treatment}{Probability of death in non severe
-hospital inections that aren't treated}
-
-\item{prob_severe_death_treatment}{Probability of death from severe infection
-that is treated. Default = rep(0.5, 17)}
-
-\item{prob_severe_death_no_treatment}{Probability of death from severe infection
-that is not treated. Default = rep(0.95, 17)}
-
-\item{p_dist}{Preferentiality of age group receiving treatment relative to
-other age groups when demand exceeds healthcare capacity.}
-
 \item{rel_infectiousness}{Relative infectiousness per age category relative
 to maximum infectiousness category. Default = rep(1, 17)}
 
@@ -150,45 +86,6 @@ transmissions}
 
 \item{dur_ICase}{Mean duration from symptom onset to hospitil admission (days).
 Default = 4.5}
-
-\item{dur_get_ox_survive}{Mean duration of oxygen given survive. Default = 5. Can be
-time varying, with timing of changes given by tt_dur_get_ox_survive.}
-
-\item{tt_dur_get_ox_survive}{Timing of changes in duration of  oxygen given survive.}
-
-\item{dur_get_ox_die}{Mean duration of oxygen given death. Default = 5. Can be
-time varying, with timing of changes given by tt_dur_get_ox_die.}
-
-\item{tt_dur_get_ox_die}{Timing of changes in duration of  oxygen given death.}
-
-\item{dur_not_get_ox_survive}{Mean duration without oxygen given survive.
-Default = 5}
-
-\item{dur_not_get_ox_die}{Mean duration without  oxygen given death.
-Default = 5}
-
-\item{dur_get_mv_survive}{Mean duration of ventilation given survive.
-Default = 7.3. Can be time varying, with timing of changes given by tt_dur_get_mv_survive.}
-
-\item{tt_dur_get_mv_survive}{Timing of changes in duration of ventilation given survive.}
-
-\item{dur_get_mv_die}{Mean duration of ventilation given death. Default = 6. Can be
-time varying, with timing of changes given by tt_dur_get_mv_die.}
-
-\item{tt_dur_get_mv_die}{Timing of changes in duration of ventilation given death.}
-
-\item{dur_not_get_mv_survive}{Mean duration without ventilation given
-survive. Default = 7.3}
-
-\item{dur_not_get_mv_die}{Mean duration without ventilation given
-death. Default = 1}
-
-\item{dur_rec}{Duration of recovery after coming off ventilation. Default = 2}
-
-\item{dur_R}{Mean duration of naturally acquired immunity (days). Can be
-time varying, with timing of changes given by tt_dur_R.}
-
-\item{tt_dur_R}{Timing of changes in duration of natural immunity.}
 
 \item{dur_V}{Mean duration of vaccine-derived immunity (days)}
 
@@ -235,14 +132,6 @@ changing vaccines being  given and dosing strategy changes.}
 
 \item{vaccine_coverage_mat}{Vaccine coverage targets by age (columns) and priority (row)}
 
-\item{hosp_bed_capacity}{General bed capacity. Can be single number of vector if capacity time-varies.}
-
-\item{ICU_bed_capacity}{ICU bed capacity. Can be single number of vector if capacity time-varies.}
-
-\item{tt_hosp_beds}{Times at which hospital bed capacity changes (Default = 0 = doesn't change)}
-
-\item{tt_ICU_beds}{Times at which ICU bed capacity changes (Default = 0 = doesn't change)}
-
 \item{seeding_cases}{Initial number of cases seeding the epidemic}
 
 \item{seeding_age_order}{Vector specifying the order in which seeds are allocated to ages.
@@ -257,6 +146,90 @@ Default = NULL.}
 \item{use_dde}{Use the dde solver (default is \code{TRUE})}
 
 \item{...}{Additional arguments for solver}
+
+\item{prob_hosp_multiplier}{Time varying multiplier to probability of developing
+severe symptoms. Default = 1, which is no change to provided prob_hosp.}
+
+\item{tt_prob_hosp_multiplier}{Timing of changes to multiplier of probability of
+developing severe symptoms. Default = 0}
+
+\item{prob_severe_multiplier}{Time varying multiplier to probability of
+hospitalisation. Default = 1, which is no change to provided prob_hosp.}
+
+\item{tt_prob_severe_multiplier}{Timing of changes to multiplier of probability
+of hospitalisation. Default = 0}
+
+\item{prob_severe}{Probability of developing severe symptoms by age.
+Default = c(0.05022296,    0.05022296,    0.05022296,    0.05022296,    0.05022296,
+0.05022296,    0.05022296,    0.053214942, 0.05974426,    0.074602879,
+0.103612417, 0.149427991, 0.223777304,    0.306985918,
+0.385779555, 0.461217861, 0.709444444)}
+
+\item{prob_non_severe_death_treatment}{Probability of death from non severe
+treated infection.
+Default = c(0.0125702,    0.0125702,    0.0125702,    0.0125702,
+0.0125702,    0.0125702,    0.0125702,    0.013361147,
+0.015104687,    0.019164124,    0.027477519,    0.041762108,
+0.068531658,    0.105302319,    0.149305732,    0.20349534,    0.5804312)}
+
+\item{prob_severe_death_treatment}{Probability of death from severe infection
+that is treated. Default = rep(0.5, 17)}
+
+\item{prob_non_severe_death_no_treatment}{Probability of death in non severe
+hospital inections that aren't treated}
+
+\item{prob_severe_death_no_treatment}{Probability of death from severe infection
+that is not treated. Default = rep(0.95, 17)}
+
+\item{p_dist}{Preferentiality of age group receiving treatment relative to
+other age groups when demand exceeds healthcare capacity.}
+
+\item{dur_get_ox_survive}{Mean duration of oxygen given survive. Default = 5. Can be
+time varying, with timing of changes given by tt_dur_get_ox_survive.}
+
+\item{tt_dur_get_ox_survive}{Timing of changes in duration of  oxygen given survive.}
+
+\item{dur_get_ox_die}{Mean duration of oxygen given death. Default = 5. Can be
+time varying, with timing of changes given by tt_dur_get_ox_die.}
+
+\item{tt_dur_get_ox_die}{Timing of changes in duration of  oxygen given death.}
+
+\item{dur_not_get_ox_survive}{Mean duration without oxygen given survive.
+Default = 5}
+
+\item{dur_not_get_ox_die}{Mean duration without  oxygen given death.
+Default = 5}
+
+\item{dur_get_mv_survive}{Mean duration of ventilation given survive.
+Default = 7.3. Can be time varying, with timing of changes given by tt_dur_get_mv_survive.}
+
+\item{tt_dur_get_mv_survive}{Timing of changes in duration of ventilation given survive.}
+
+\item{dur_get_mv_die}{Mean duration of ventilation given death. Default = 6. Can be
+time varying, with timing of changes given by tt_dur_get_mv_die.}
+
+\item{tt_dur_get_mv_die}{Timing of changes in duration of ventilation given death.}
+
+\item{dur_not_get_mv_survive}{Mean duration without ventilation given
+survive. Default = 7.3}
+
+\item{dur_not_get_mv_die}{Mean duration without ventilation given
+death. Default = 1}
+
+\item{dur_rec}{Duration of recovery after coming off ventilation. Default = 2}
+
+\item{hosp_bed_capacity}{General bed capacity. Can be single number of vector if capacity time-varies.}
+
+\item{ICU_bed_capacity}{ICU bed capacity. Can be single number of vector if capacity time-varies.}
+
+\item{tt_hosp_beds}{Times at which hospital bed capacity changes (Default = 0 = doesn't change)}
+
+\item{tt_ICU_beds}{Times at which ICU bed capacity changes (Default = 0 = doesn't change)}
+
+\item{dur_R}{Mean duration of naturally acquired immunity (days). Can be
+time varying, with timing of changes given by tt_dur_R.}
+
+\item{tt_dur_R}{Timing of changes in duration of natural immunity.}
 }
 \value{
 Simulation output
