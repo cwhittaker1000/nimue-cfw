@@ -5,10 +5,7 @@
 \title{Run the vaccine model}
 \usage{
 run(
-  country = NULL,
-  population = NULL,
-  tt_contact_matrix = 0,
-  contact_matrix_set = NULL,
+  countries = NULL,
   R0 = 3,
   tt_R0 = 0,
   beta_set = NULL,
@@ -40,19 +37,6 @@ run(
 )
 }
 \arguments{
-\item{country}{Character for country beign simulated. WIll be used to
-generate \code{population} and \code{contact_matrix_set} if
-unprovided. Either \code{country} or \code{population} and
-\code{contact_matrix_set} must be provided.}
-
-\item{population}{Population vector (for each age group). Default = NULL,
-which will cause population to be sourced from \code{country}}
-
-\item{tt_contact_matrix}{Time change points for matrix change. Default = 0}
-
-\item{contact_matrix_set}{Contact matrices used in simulation. Default =
-NULL, which will generate this based on the \code{country}.}
-
 \item{R0}{Basic Reproduction Number. Default = 3}
 
 \item{tt_R0}{Change time points for R0. Default = 0}
@@ -146,6 +130,19 @@ Default = NULL.}
 \item{use_dde}{Use the dde solver (default is \code{TRUE})}
 
 \item{...}{Additional arguments for solver}
+
+\item{population}{Population vector (for each age group). Default = NULL,
+which will cause population to be sourced from \code{country}}
+
+\item{country}{Character for country beign simulated. WIll be used to
+generate \code{population} and \code{contact_matrix_set} if
+unprovided. Either \code{country} or \code{population} and
+\code{contact_matrix_set} must be provided.}
+
+\item{contact_matrix_set}{Contact matrices used in simulation. Default =
+NULL, which will generate this based on the \code{country}.}
+
+\item{tt_contact_matrix}{Time change points for matrix change. Default = 0}
 
 \item{prob_hosp_multiplier}{Time varying multiplier to probability of developing
 severe symptoms. Default = 1, which is no change to provided prob_hosp.}

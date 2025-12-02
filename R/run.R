@@ -189,6 +189,16 @@ run <- function(
   args <- as.list(environment())
   set.seed(seed)
 
+
+  ## Warning
+  if (is.null(prob_death_hosp)) {
+    warning(
+      "`prob_death_hosp` has not been specified; using an internal, slightly weird default instead. ",
+      "Please set `prob_death_hosp` explicitly for any serious analysis.",
+      call. = FALSE
+    )
+  }
+
   # create parameter list
   pars <- parameters(countries = countries,
                      R0 = R0,

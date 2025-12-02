@@ -1138,6 +1138,7 @@ SEXP vaccine_simplified_multiloc_set_user(SEXP internal_p, SEXP user) {
   internal->tt_vaccine = (double*) user_get_array_dim(user, false, internal->tt_vaccine, "tt_vaccine", 1, NA_REAL, NA_REAL, &internal->dim_tt_vaccine);
   internal->tt_vaccine_efficacy_infection = (double*) user_get_array_dim(user, false, internal->tt_vaccine_efficacy_infection, "tt_vaccine_efficacy_infection", 1, NA_REAL, NA_REAL, &internal->dim_tt_vaccine_efficacy_infection);
   internal->dim_beta = internal->N_locations;
+  internal->dim_beta_set = internal->N_locations;
   internal->dim_current_index = internal->N_locations;
   internal->dim_D_0_1 = internal->N_age;
   internal->dim_D_0_2 = internal->N_vaccine;
@@ -1252,7 +1253,7 @@ SEXP vaccine_simplified_multiloc_set_user(SEXP internal_p, SEXP user) {
   internal->vr = (double*) R_Calloc(internal->dim_vr, double);
   R_Free(internal->vr_den);
   internal->vr_den = (double*) R_Calloc(internal->dim_vr_den, double);
-  internal->dim_beta_set = internal->dim_tt_beta;
+  internal->beta_set = (double*) user_get_array(user, false, internal->beta_set, "beta_set", NA_REAL, NA_REAL, 1, internal->dim_beta_set);
   internal->dim_D = internal->dim_D_1 * internal->dim_D_2 * internal->dim_D_3;
   internal->dim_D_0 = internal->dim_D_0_1 * internal->dim_D_0_2 * internal->dim_D_0_3;
   internal->dim_D_0_12 = internal->dim_D_0_1 * internal->dim_D_0_2;
@@ -1357,7 +1358,9 @@ SEXP vaccine_simplified_multiloc_set_user(SEXP internal_p, SEXP user) {
   internal->vaccine_target_vec = (double*) R_Calloc(internal->dim_vaccine_target_vec, double);
   R_Free(internal->vr_temp);
   internal->vr_temp = (double*) R_Calloc(internal->dim_vr_temp, double);
-  internal->beta_set = (double*) user_get_array(user, false, internal->beta_set, "beta_set", NA_REAL, NA_REAL, 1, internal->dim_beta_set);
+  for (int i = 1; i <= internal->dim_beta; ++i) {
+    internal->beta[i - 1] = internal->beta_set[i - 1];
+  }
   internal->D_0 = (double*) user_get_array(user, false, internal->D_0, "D_0", NA_REAL, NA_REAL, 3, internal->dim_D_0_1, internal->dim_D_0_2, internal->dim_D_0_3);
   internal->dim_vaccine_efficacy_infection = internal->dim_vaccine_efficacy_infection_1 * internal->dim_vaccine_efficacy_infection_2 * internal->dim_vaccine_efficacy_infection_3;
   internal->dim_vaccine_efficacy_infection_12 = internal->dim_vaccine_efficacy_infection_1 * internal->dim_vaccine_efficacy_infection_2;
@@ -1387,9 +1390,6 @@ SEXP vaccine_simplified_multiloc_set_user(SEXP internal_p, SEXP user) {
   internal->rel_infectiousness_vaccinated = (double*) user_get_array(user, false, internal->rel_infectiousness_vaccinated, "rel_infectiousness_vaccinated", NA_REAL, NA_REAL, 2, internal->dim_rel_infectiousness_vaccinated_1, internal->dim_rel_infectiousness_vaccinated_2);
   internal->S_0 = (double*) user_get_array(user, false, internal->S_0, "S_0", NA_REAL, NA_REAL, 3, internal->dim_S_0_1, internal->dim_S_0_2, internal->dim_S_0_3);
   internal->vaccine_coverage_mat = (double*) user_get_array(user, false, internal->vaccine_coverage_mat, "vaccine_coverage_mat", NA_REAL, NA_REAL, 2, internal->dim_vaccine_coverage_mat_1, internal->dim_vaccine_coverage_mat_2);
-  for (int i = 1; i <= internal->dim_beta; ++i) {
-    internal->beta[i - 1] = internal->beta_set[i - 1];
-  }
   for (int i = 1; i <= internal->dim_D_1; ++i) {
     for (int j = 1; j <= internal->dim_D_2; ++j) {
       for (int k = 1; k <= internal->dim_D_3; ++k) {

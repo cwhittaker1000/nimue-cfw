@@ -9,7 +9,7 @@ default_probs <- function() {
     0.1399878, 0.233470395)
   list(
     prob_hosp = prob_hosp,
-    prob_death_hosp = c(rep(0.95, length(prob_hosp))),
+    prob_death_hosp = c(rep(0.95, length(prob_hosp))), ### NOTE - ALWAYS BE CAREFUL TO SPECIFY YOUR OWN PROB_DEATH_HOSP
     p_dist = rep(1, length(prob_hosp)),
     rel_infectiousness = rep(1, 17),
     rel_infectiousness_vaccinated = rep(1,17)
