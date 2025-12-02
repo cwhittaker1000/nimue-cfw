@@ -255,12 +255,22 @@ mix_mat_set[, , ] <- user()
 dim(mix_mat_set) <- c(N_age, N_age, N_locations)
 
 # Interpolation for beta
+beta[] <- interpolate(tt_beta, beta_set[i, ], "constant") ## something like this
+
 beta[] <- beta_set[i]
 tt_beta[] <- user()
 beta_set[] <- user()
 dim(beta) <- N_locations
 dim(tt_beta) <- user()
 dim(beta_set) <- N_locations
+
+
+# Interpolation for beta
+# beta <- interpolate(tt_beta, beta_set, "constant")
+# tt_beta[] <- user()
+# beta_set[] <- user()
+# dim(tt_beta) <- user()
+# dim(beta_set) <- length(tt_beta)
 
 # Generating Force of Infection
 temp_rel[,,] <- (IMild[i,j,k] * rel_infectiousness_vaccinated[i,j]) + (ICase[i,j,k] * rel_infectiousness_vaccinated[i,j])

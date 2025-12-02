@@ -56,25 +56,27 @@ vaccine_pars <- default_vaccine_pars()
 #' @inheritParams run
 ## need to build in time-varying Rt
 #
-# countries <- c("France", "United Kingdom")
-# dur_E <- durs$dur_E
-# dur_R <- durs$dur_R
-# dur_IHosp <- durs$dur_IHosp
-# dur_ICase <- durs$dur_ICase
-# dur_IMild <- durs$dur_IMild
-# dur_V <- Inf
-#
-# prob_hosp = probs$prob_hosp
-# prob_death_hosp = probs$prob_death_hosp
-# p_dist = probs$p_dist
-# rel_infectiousness = probs$rel_infectiousness
-# rel_infectiousness_vaccinated = probs$rel_infectiousness_vaccinated
-#
-# dur_V <- vaccine_pars$dur_V
-# vaccine_efficacy_infection <- vaccine_pars$vaccine_efficacy_infection
-# tt_vaccine_efficacy_infection <- vaccine_pars$tt_vaccine_efficacy_infection
-# vaccine_efficacy_disease <- vaccine_pars$vaccine_efficacy_disease
-# tt_vaccine_efficacy_disease <- vaccine_pars$tt_vaccine_efficacy_disease
+countries <- c("France", "United Kingdom")
+dur_E <- durs$dur_E
+dur_R <- durs$dur_R
+dur_IHosp <- durs$dur_IHosp
+dur_ICase <- durs$dur_ICase
+dur_IMild <- durs$dur_IMild
+dur_V <- Inf
+
+prob_hosp = probs$prob_hosp
+prob_death_hosp = probs$prob_death_hosp
+p_dist = probs$p_dist
+rel_infectiousness = probs$rel_infectiousness
+rel_infectiousness_vaccinated = probs$rel_infectiousness_vaccinated
+
+dur_V <- vaccine_pars$dur_V
+vaccine_efficacy_infection <- vaccine_pars$vaccine_efficacy_infection
+tt_vaccine_efficacy_infection <- vaccine_pars$tt_vaccine_efficacy_infection
+vaccine_efficacy_disease <- vaccine_pars$vaccine_efficacy_disease
+tt_vaccine_efficacy_disease <- vaccine_pars$tt_vaccine_efficacy_disease
+R0 =
+
 parameters <- function(
 
   # Demography
@@ -169,30 +171,55 @@ parameters <- function(
   gamma_V <- 2 * 1/dur_V
   gamma_vaccine_delay <- 2 * 1 / dur_vaccine_delay
 
-  ## Handle R0: allow scalar or one per country
-  if (length(R0) == 1L) {
-    R0_vec <- rep(R0, length(countries))
-  } else if (length(R0) == length(countries)) {
-    R0_vec <- R0
-  } else {
-    stop("R0 must be either a scalar or have length equal to the number of countries")
+  ## Setting up time-varying Rt
+  n_countries <- length(countries)
+  n_timepoints <- length(tt_R0)
+  if (n_timepoints < 1L) {
+    stop("`tt_R0` must have length >= 1")
   }
 
-  ## Check this is actually correct!!
-  ## build in tt_R0 properly here later on
-  beta_set <- vapply(seq_len(length(countries)), function(i) {
+  ## Setting up the time-varying Rt for each country via the Rt matrix
+  n_countries <- length(countries)
+  n_tt <- length(tt_R0)
+  if (is.list(R0)) {
+    if (length(R0) != n_countries) {
+      stop("When `R0` is a list, it must have length equal to `length(countries)`.")
+    }
+    Rt_mat <- matrix(NA_real_, nrow = n_countries, ncol = n_tt)
 
-    ## Country-specific baseline mixing matrix
-    baseline_matrix <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], population_list[[i]]) ## check I'm inputting the right matrix in here!
+    for (i in seq_len(n_countries)) {
+      R0_i <- R0[[i]]
+      Rt_mat[i, ] <- R0_i
+    }
 
-    ## Country-specific beta, based on that matrix and R0
-    beta_est_infectiousness(dur_IMild = dur_IMild, dur_ICase = dur_ICase,
-                            prob_hosp = prob_hosp,
-                            mixing_matrix = baseline_matrix,
-                            rel_infectiousness = rel_infectiousness,
-                            R0 = R0_vec[i])
-    }, FUN.VALUE = numeric(1)
-  )
+  } else {
+    # R0 is scalar or a single vector used for all countries
+    if (length(R0) == 1L) {
+      Rt_mat <- matrix(R0, nrow = n_countries, ncol = n_tt)
+    } else if (length(R0) == n_tt) {
+      Rt_mat <- matrix(rep(R0, each = n_countries),
+                       nrow = n_countries, ncol = n_tt)
+    } else {
+      stop("`R0` must be a scalar, a vector of length(tt_R0), or a list of such vectors (one per country).")
+    }
+  }
+
+  ## Converting Rt to betas for each country
+  beta_set <- matrix(NA_real_, nrow = n_countries, ncol = n_tt)
+  for (i in seq_len(n_countries)) {
+
+    # Country-specific baseline mixing matrix
+    baseline_matrix <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], population_list[[i]] )
+
+    # Time-varying beta for this country
+    beta_set[i, ] <- vapply(seq_len(n_tt), function(j) { beta_est_infectiousness(
+      dur_IMild = dur_IMild, dur_ICase = dur_ICase,
+      prob_hosp = prob_hosp,
+      mixing_matrix = baseline_matrix,
+      rel_infectiousness = rel_infectiousness,
+      R0 = Rt_mat[i, j])
+      }, numeric(1))
+  }
 
   # normalise to sum to 1
   p_dist <- matrix(rep(p_dist, 6), nrow = 17, ncol = 6)
