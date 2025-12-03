@@ -259,19 +259,10 @@ dim(mix_mat_set) <- c(N_age, N_age, N_locations)
 ## HAS TO BE THE ROWS ARE THE DIFFERENT TIMEPOINTS
 tt_beta[] <- user()
 beta_set[,] <- user()
-beta[] <- interpolate(tt_beta, beta_set, "constant") ## something like this
-
+beta[] <- interpolate(tt_beta, beta_set, "constant")
 dim(tt_beta) <- user()
 dim(beta_set) <- c(length(tt_beta), N_locations)
 dim(beta) <- N_locations
-
-
-# Interpolation for beta
-# beta <- interpolate(tt_beta, beta_set, "constant")
-# tt_beta[] <- user()
-# beta_set[] <- user()
-# dim(tt_beta) <- user()
-# dim(beta_set) <- length(tt_beta)
 
 # Generating Force of Infection
 temp_rel[,,] <- (IMild[i,j,k] * rel_infectiousness_vaccinated[i,j]) + (ICase[i,j,k] * rel_infectiousness_vaccinated[i,j])

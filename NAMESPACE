@@ -2,6 +2,7 @@
 
 export(beta_est_infectiousness)
 export(format)
+export(format_multiloc)
 export(nimue_deterministic_model)
 export(run)
 importFrom(magrittr,"%>%")

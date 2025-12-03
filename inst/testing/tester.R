@@ -2,8 +2,13 @@ library(dplyr)
 library(ggplot2)
 library(nimue)
 
+## check final size is right when specifying particular R0s - check vs squire
+
 x <- run(countries = c("Nigeria", "United Kingdom"),
-         seeding_cases = c(10, 0))
+         R0 = list(c(2, 1.2), c(1.2, 0.9)),
+         tt_R0 = c(0, 50),
+         seeding_cases = c(10, 10),
+         time_period = 1000)
 
 output1 <- format_multiloc(x)
 

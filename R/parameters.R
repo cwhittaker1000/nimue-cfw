@@ -75,7 +75,6 @@ vaccine_efficacy_infection <- vaccine_pars$vaccine_efficacy_infection
 tt_vaccine_efficacy_infection <- vaccine_pars$tt_vaccine_efficacy_infection
 vaccine_efficacy_disease <- vaccine_pars$vaccine_efficacy_disease
 tt_vaccine_efficacy_disease <- vaccine_pars$tt_vaccine_efficacy_disease
-R0 =
 
 parameters <- function(
 
@@ -173,14 +172,12 @@ parameters <- function(
 
   ## Setting up time-varying Rt
   n_countries <- length(countries)
-  n_timepoints <- length(tt_R0)
-  if (n_timepoints < 1L) {
+  n_tt <- length(tt_R0)
+  if (n_tt < 1L) {
     stop("`tt_R0` must have length >= 1")
   }
 
   ## Setting up the time-varying Rt for each country via the Rt matrix
-  n_countries <- length(countries)
-  n_tt <- length(tt_R0)
   if (is.list(R0)) {
     if (length(R0) != n_countries) {
       stop("When `R0` is a list, it must have length equal to `length(countries)`.")
@@ -193,31 +190,45 @@ parameters <- function(
     }
 
   } else {
-    # R0 is scalar or a single vector used for all countries
-    if (length(R0) == 1L) {
-      Rt_mat <- matrix(R0, nrow = n_countries, ncol = n_tt)
-    } else if (length(R0) == n_tt) {
-      Rt_mat <- matrix(rep(R0, each = n_countries),
-                       nrow = n_countries, ncol = n_tt)
-    } else {
-      stop("`R0` must be a scalar, a vector of length(tt_R0), or a list of such vectors (one per country).")
+
+    ## 1) Single country: R0 and tt_R0 both allowed, must have the same length.
+    if (n_countries == 1L) {
+      if (length(R0) != n_tt) {
+        stop("For a single country, `length(R0)` must equal `length(tt_R0)`.")
+      }
+      Rt_mat <- matrix(R0, ncol = 1L, nrow = n_tt)
+    }  else {
+
+    ## 2) Multiple countries: (i) one scalar per country (no time variation) -> length(R0) = n_countries, length(tt_R0) = 1
+    ##                        (ii) one shared time-varying vector across countries -> length(R0) = length(tt_R0)
+      if (length(R0) == n_countries && n_tt == 1L) { # (i) different scalar per country, single timepoint
+        Rt_mat <- matrix(R0, ncol = n_countries, nrow = 1L)
+      } else if (length(R0) == n_tt) {  # (ii) same trajectory across countries
+        Rt_mat <- matrix(rep(R0, each = n_countries), ncol = n_countries, nrow = n_tt, byrow = TRUE)
+      } else {
+        stop(
+          "For multiple countries, `R0` must either:\n", "  * have length `length(countries)` with `length(tt_R0) == 1`, or\n",
+          "  * have length `length(tt_R0)` (shared trajectory across countries)."
+        )
+      }
     }
   }
 
   ## Converting Rt to betas for each country
-  beta_set <- matrix(NA_real_, nrow = n_countries, ncol = n_tt)
+  # beta_set is i timepoints and j countries
+  beta_set <- matrix(NA_real_, nrow = n_tt, ncol = n_countries)
   for (i in seq_len(n_countries)) {
 
     # Country-specific baseline mixing matrix
     baseline_matrix <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], population_list[[i]] )
 
     # Time-varying beta for this country
-    beta_set[i, ] <- vapply(seq_len(n_tt), function(j) { beta_est_infectiousness(
+    beta_set[, i] <- vapply(seq_len(n_tt), function(j) { beta_est_infectiousness(
       dur_IMild = dur_IMild, dur_ICase = dur_ICase,
       prob_hosp = prob_hosp,
       mixing_matrix = baseline_matrix,
       rel_infectiousness = rel_infectiousness,
-      R0 = Rt_mat[i, j])
+      R0 = Rt_mat[j, i])
       }, numeric(1))
   }
 
