@@ -27,9 +27,9 @@ dim(S) <- c(N_age, N_vaccine,N_locations)
 
 ## ODEs for S compartments
 ### Note: potentially need to replace vaccine_efficacy_infection_t with a constant vaccine_efficacy_infection
-deriv(S[,1,]) <- -(lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) - (vr[k] * vaccination_target[i,k] * S[i,j,k])
-deriv(S[,2,]) <- - (lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) + (vr[k] * vaccination_target[i,k] * S[i,j-1,k]) - (gamma_vaccine[j] * S[i,j,k])
-deriv(S[,3:N_vaccine,]) <- (gamma_vaccine[j-1] * S[i,j-1,k]) - (lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) - (gamma_vaccine[j] * S[i,j,k])
+deriv(S[,1,]) <- -(lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (vr[k] * vaccination_target[i,k] * S[i,j,k])
+deriv(S[,2,]) <- - (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) + (vr[k] * vaccination_target[i,k] * S[i,j-1,k]) - (gamma_vaccine[j] * S[i,j,k])
+deriv(S[,3:N_vaccine,]) <- (gamma_vaccine[j-1] * S[i,j-1,k]) - (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (gamma_vaccine[j] * S[i,j,k])
 
 ## Outputs
 output(S_overall[,]) <- sum(S[i,,j])
@@ -50,9 +50,9 @@ gamma_E <- user() # rate of progression through latent infection
 
 ## ODEs for E compartments
 ### Note: potentially need to replace vaccine_efficacy_infection_t with a constant vaccine_efficacy_infection
-deriv(E[,1,]) <- (lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) - (vr[k] * vaccination_target[i,k] * E[i,j,k])
-deriv(E[,2,]) <- (lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) + (vr[k] * vaccination_target[i,k] * E[i,j-1,k]) - (gamma_vaccine[j] * E[i,j,k])
-deriv(E[,3:N_vaccine,]) <- (gamma_vaccine[j-1] * E[i,j-1,k]) + (lambda[i,k] * vaccine_efficacy_infection_t[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) - (gamma_vaccine[j] * E[i,j,k])
+deriv(E[,1,]) <- (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) - (vr[k] * vaccination_target[i,k] * E[i,j,k])
+deriv(E[,2,]) <- (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) + (vr[k] * vaccination_target[i,k] * E[i,j-1,k]) - (gamma_vaccine[j] * E[i,j,k])
+deriv(E[,3:N_vaccine,]) <- (gamma_vaccine[j-1] * E[i,j-1,k]) + (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (gamma_E * E[i,j,k]) - (gamma_vaccine[j] * E[i,j,k])
 
 ## Outputs
 output(E_overall[,]) <- sum(E[i,,j])
@@ -176,14 +176,9 @@ N_prioritisation_steps <- user()
 vaccine_coverage_mat[,] <- user()
 dim(vaccine_coverage_mat) <- c(N_prioritisation_steps, N_age)
 
-# Generating Vaccine Efficacy Over Time
-vaccine_efficacy_infection_t[, ] <- interpolate(tt_vaccine_efficacy_infection, vaccine_efficacy_infection, "constant")
-dim(vaccine_efficacy_infection_t) <- c(N_age, N_vaccine)
-tt_vaccine_efficacy_infection[] <- user()
-vaccine_efficacy_infection[, ,] <- user()
-dim(tt_vaccine_efficacy_infection) <- user()
-dim(vaccine_efficacy_infection) <- c(length(tt_vaccine_efficacy_infection), N_age, N_vaccine)
-
+# Vaccine Efficacy against infection
+vaccine_efficacy_infection[, ] <- user()
+dim(vaccine_efficacy_infection) <- c(N_age, N_vaccine)
 gamma_vaccine[] <- user() # Vector of vaccine progression parameters by vaccination status (First = 0 as handled separately as time-varying vaccination rate, Last = 0 as no progression from "previously vaccinated group)
 dim(gamma_vaccine) <- N_vaccine
 

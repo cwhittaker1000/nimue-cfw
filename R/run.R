@@ -169,9 +169,7 @@ run <- function(
   # vaccine
   dur_V = vaccine_pars$dur_V,
   vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
-  tt_vaccine_efficacy_infection = vaccine_pars$tt_vaccine_efficacy_infection,
   vaccine_efficacy_disease = vaccine_pars$vaccine_efficacy_disease,
-  tt_vaccine_efficacy_disease = vaccine_pars$tt_vaccine_efficacy_disease,
   max_vaccine = vaccine_pars$max_vaccine,
   tt_vaccine = vaccine_pars$tt_vaccine,
   dur_vaccine_delay = vaccine_pars$dur_vaccine_delay,
