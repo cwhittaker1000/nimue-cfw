@@ -189,7 +189,7 @@ parameters <- function(
 
     for (i in seq_len(n_countries)) {
       R0_i <- R0[[i]]
-      Rt_mat[i, ] <- R0_i
+      Rt_mat[, i] <- R0_i
     }
 
   } else {

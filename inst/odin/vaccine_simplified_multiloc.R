@@ -254,15 +254,16 @@ dim(m) <- c(N_age, N_age, N_locations)
 mix_mat_set[, , ] <- user()
 dim(mix_mat_set) <- c(N_age, N_age, N_locations)
 
-# Interpolation for beta
-beta[] <- interpolate(tt_beta, beta_set[i, ], "constant") ## something like this
-
-beta[] <- beta_set[i]
+# Interpolation for beta ## CHECK I HAVE THE MATRIX BETA_SET THE RIGHT WAY ROUND HERE
+## I THINK BASED ON https://mrc-ide.github.io/odin/articles/odin.html#interpolating-functions IT
+## HAS TO BE THE ROWS ARE THE DIFFERENT TIMEPOINTS
 tt_beta[] <- user()
-beta_set[] <- user()
-dim(beta) <- N_locations
+beta_set[,] <- user()
+beta[] <- interpolate(tt_beta, beta_set, "constant") ## something like this
+
 dim(tt_beta) <- user()
-dim(beta_set) <- N_locations
+dim(beta_set) <- c(length(tt_beta), N_locations)
+dim(beta) <- N_locations
 
 
 # Interpolation for beta
