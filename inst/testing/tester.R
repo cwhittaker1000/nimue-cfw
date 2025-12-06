@@ -45,13 +45,14 @@ library(nimue)   # or your package name if this is a fork
 age_breaks <- c(0, 20, 40, 60, 80, 100)
 
 sim <- run(
-  countries   = c("France", "Germany"),
+  countries   = c("France", "Nigeria"),
   age_breaks  = age_breaks,
   R0          = 3,
   tt_R0       = 0,
   time_period = 365,
   seeding_cases = 20,
-  use_dde     = TRUE
+  use_dde     = TRUE,
+  vaccine_coverage_mat = matrix(0.8, ncol = 5, nrow = 1)
 )
 
 # Quick sanity checks
@@ -62,3 +63,11 @@ dim(sim$odin_parameters$mix_mat_set)  # c(5, 5, 2) for 2 locations
 # For example, inspect the 5x5 mixing matrix for France:
 sim$odin_parameters$mix_mat_set[ , , 1]
 
+output1 <- format_multiloc(sim)
+
+ggplot(output1, aes(x = t, y = value, col = compartment))  +
+  geom_line(size = 1) +
+  ylab("Infections") +
+  facet_wrap(location_index ~ ., scales = "free_y") +
+  xlab("Time") +
+  theme_bw()

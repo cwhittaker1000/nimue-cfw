@@ -75,6 +75,8 @@ dur_vaccine_delay <- vaccine_pars$dur_vaccine_delay
 max_vaccine <- vaccine_pars$max_vaccine
 tt_vaccine <- vaccine_pars$tt_vaccine
 vaccine_coverage_mat <- vaccine_pars$vaccine_coverage_mat
+q <- NULL
+pi_travel <- NULL
 
 parameters <- function(
 
