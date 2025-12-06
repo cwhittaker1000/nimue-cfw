@@ -36,3 +36,29 @@ output1 %>%
 
 1636420 / 206139567
 1702891 / 67885984
+
+
+library(nimue)   # or your package name if this is a fork
+
+# Define 5 age groups:
+# [0,20), [20,40), [40,60), [60,80), [80,100)
+age_breaks <- c(0, 20, 40, 60, 80, 100)
+
+sim <- run(
+  countries   = c("France", "Germany"),
+  age_breaks  = age_breaks,
+  R0          = 3,
+  tt_R0       = 0,
+  time_period = 365,
+  seeding_cases = 20,
+  use_dde     = TRUE
+)
+
+# Quick sanity checks
+sim$odin_parameters$N_age        # should be 5
+sim$odin_parameters$age_breaks   # should be c(0, 20, 40, 60, 80, 100)
+dim(sim$odin_parameters$mix_mat_set)  # c(5, 5, 2) for 2 locations
+
+# For example, inspect the 5x5 mixing matrix for France:
+sim$odin_parameters$mix_mat_set[ , , 1]
+

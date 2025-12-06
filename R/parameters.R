@@ -186,8 +186,8 @@ parameters <- function(
   gamma_IMild    <- 1 / dur_IMild
   gamma_ICase    <- 1 / dur_ICase
   gamma_IHosp    <- 1 / dur_IHosp
-  gamma_V        <- 2 * 1 / dur_V
-  gamma_vaccine_delay <- 2 * 1 / dur_vaccine_delay
+  gamma_V        <- 1 * 1 / dur_V
+  gamma_vaccine_delay <- 1 * 1 / dur_vaccine_delay
 
   n_tt <- length(tt_R0)
   if (n_tt < 1L) {
@@ -262,6 +262,8 @@ parameters <- function(
   ## -------------------------------------------------------------------
 
   ## Global population by canonical 17 age bands (sum across countries)
+  ## Note: currently this adjustment for prob_hosp etc is being done on global pop for reweighting and calculation
+  ##       of probs - maybe at some point we might want to make this country-specific
   pop_weights17 <- Reduce(`+`, population_raw_list)  # each element is length 17
 
   # prob_hosp
@@ -291,6 +293,15 @@ parameters <- function(
     stop("`rel_infectiousness` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
   }
 
+  # rel_infectiousness
+  if (length(rel_infectiousness_vaccinated) == length(mapping)) {
+    rel_infectiousness_vaccinated <- aggregate_age_vector(rel_infectiousness_vaccinated, mapping, N_age,
+                                               weights = pop_weights17,
+                                               name = "rel_infectiousness_vaccinated")
+  } else if (length(rel_infectiousness_vaccinated) != N_age) {
+    stop("`rel_infectiousness_vaccinated` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
   # p_dist
   if (length(p_dist) == length(mapping)) {
     p_dist <- aggregate_age_vector(p_dist, mapping, N_age,
@@ -298,6 +309,23 @@ parameters <- function(
                                    name = "p_dist")
   } else if (length(p_dist) != N_age) {
     stop("`p_dist` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+  # vaccine_efficacy_infection
+  if (length(vaccine_efficacy_infection) == length(mapping)) {
+    vaccine_efficacy_infection <- aggregate_age_vector(vaccine_efficacy_infection, mapping, N_age,
+                                                       weights = pop_weights17,
+                                                       name = "vaccine_efficacy_infection")
+  } else if (length(vaccine_efficacy_infection) != 1L && length(vaccine_efficacy_infection) != N_age) {
+    stop("`vaccine_efficacy_infection` must have length 1, 17, or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
+  # vaccine_efficacy_disease
+  if (length(vaccine_efficacy_disease) == length(mapping)) {
+    vaccine_efficacy_disease <- aggregate_age_vector(vaccine_efficacy_disease, mapping, N_age,
+                                                     weights = pop_weights17,
+                                                     name = "vaccine_efficacy_disease")
+  } else if (length(vaccine_efficacy_disease) != 1L && length(vaccine_efficacy_disease) != N_age) {
+    stop("`vaccine_efficacy_disease` must have length 1, 17, or length equal to the number of age groups implied by `age_breaks`.")
   }
 
   ## ---------------------------------------------------------------------------
@@ -336,21 +364,14 @@ parameters <- function(
 
   p_dist <- p_dist_mat
 
+  # Format vaccine-specific parameters
   gamma_vaccine <- c(0, gamma_vaccine_delay, gamma_V, 0)
-  rel_infectiousness_vaccinated <- format_rel_inf_vacc_for_odin(rel_infectiousness_vaccinated)
+  rel_infectiousness_vaccinated <- format_rel_inf_vacc_for_odin(rel_inf_vacc = rel_infectiousness_vaccinated, N_age = N_age)
 
   # Vaccine efficacy setup for the model
-  vaccine_efficacy_infection_odin_array <- format_ve_i_for_odin(
-    vaccine_efficacy_infection = vaccine_efficacy_infection
-  )
-  prob_hosp_odin_array <- format_ve_d_for_odin(
-    vaccine_efficacy_disease = vaccine_efficacy_disease,
-    prob_hosp = prob_hosp
-  )
-  prob_death_hosp_odin_array <- format_ve_d_for_odin(
-    vaccine_efficacy_disease = 0,
-    prob_hosp = prob_death_hosp
-  )
+  vaccine_efficacy_infection_odin_array <- format_ve_i_for_odin(vaccine_efficacy_infection = vaccine_efficacy_infection, N_age = N_age)
+  prob_hosp_odin_array <- format_ve_d_for_odin(vaccine_efficacy_disease = vaccine_efficacy_disease, prob_hosp = prob_hosp, N_age = N_age)
+  prob_death_hosp_odin_array <- format_ve_d_for_odin(vaccine_efficacy_disease = 0, prob_hosp = prob_death_hosp, N_age = N_age)
 
   ## ---------------------------------------------------------------------------
   ## 8. Collate parameters
@@ -440,44 +461,62 @@ beta_est_infectiousness <- function(dur_IMild,
 }
 
 #' @noRd
-format_rel_inf_vacc_for_odin <- function(rel_inf_vacc) {
+format_rel_inf_vacc_for_odin <- function(rel_inf_vacc, N_age) {
 
-  if(length(rel_inf_vacc) == 1){
-    rel_inf_vacc <- rep(rel_inf_vacc, 17)
+  # rel_inf_vacc must be length 1 or N_age
+  if (length(rel_inf_vacc) == 1L) {
+    rel_inf_vacc <- rep(rel_inf_vacc, N_age)
   }
 
-  return(matrix(c(rep(1, 17 * 2),
-                  rel_inf_vacc,
-                  rep(1, 17)), nrow = 17, ncol = 4))
+  if (length(rel_inf_vacc) != N_age) {
+    stop("`rel_inf_vacc` must be length 1 or length N_age = ", N_age)
+  }
 
+  # age x vaccine-class matrix (N_age x 4)
+  # Classes: [1:2] = 1,
+  #          [3]   = rel_inf_vacc,
+  #          [4]   = 1
+  mat <- matrix(
+    c(
+      rep(1, N_age * 2L),
+      rel_inf_vacc,
+      rep(1, N_age)
+    ),
+    nrow = N_age,
+    ncol = 4
+  )
+
+  return(mat)
 }
 
-#' @noRd
-format_ve_i_for_odin <- function(vaccine_efficacy_infection) {
 
-  # vaccine_efficacy_infection must be length 1 or 17
+#' @noRd
+format_ve_i_for_odin <- function(vaccine_efficacy_infection, N_age) {
+
+  # vaccine_efficacy_infection must be length 1 or N_age
   if (length(vaccine_efficacy_infection) == 1L) {
-    vaccine_efficacy_infection <- rep(vaccine_efficacy_infection, 17)
+    vaccine_efficacy_infection <- rep(vaccine_efficacy_infection, N_age)
   }
 
-  if (length(vaccine_efficacy_infection) != 17L) {
-    stop("Parameter `vaccine_efficacy_infection` must be length 1 or length 17")
+  if (length(vaccine_efficacy_infection) != N_age) {
+    stop("Parameter `vaccine_efficacy_infection` must be length 1 or length N_age = ", N_age)
   }
 
   # Convert to relative susceptibility (1 - VE)
   ve_i <- 1 - vaccine_efficacy_infection
 
-  # age x vaccine-class matrix (17 x 6)
+  # age x vaccine-class matrix (N_age x 4)
   # Classes: [1:2] = 1,
-  #          [3] = ve_i,
-  #          [4] = 1 (as in original nimue logic)
+  #          [3]   = ve_i,
+  #          [4]   = 1 (waned)
   vaccine_efficacy_infection_mat <- matrix(
     c(
-      rep(1, 17 * 2),
+      rep(1, N_age * 2L),
       ve_i,
-      rep(1, 17)
+      rep(1, N_age)
     ),
-    nrow = 17, ncol = 4
+    nrow = N_age,
+    ncol = 4
   )
 
   return(vaccine_efficacy_infection_mat)
@@ -485,35 +524,42 @@ format_ve_i_for_odin <- function(vaccine_efficacy_infection) {
 
 #' @noRd
 format_ve_d_for_odin <- function(vaccine_efficacy_disease,
-                                 prob_hosp) {
+                                 prob_hosp,
+                                 N_age) {
 
-  # vaccine_efficacy_disease must be length 1 or 17
+  # vaccine_efficacy_disease must be length 1 or N_age
   if (length(vaccine_efficacy_disease) == 1L) {
-    vaccine_efficacy_disease <- rep(vaccine_efficacy_disease, 17)
+    vaccine_efficacy_disease <- rep(vaccine_efficacy_disease, N_age)
   }
 
-  if (length(vaccine_efficacy_disease) != 17L) {
-    stop("Parameter `vaccine_efficacy_disease` must be length 1 or length 17")
+  if (length(vaccine_efficacy_disease) != N_age) {
+    stop("Parameter `vaccine_efficacy_disease` must be length 1 or length N_age = ", N_age)
   }
 
-  if (length(prob_hosp) != 17L) {
-    stop("Parameter `prob_hosp` must be length 17")
+  if (length(prob_hosp) != N_age) {
+    stop("Parameter `prob_hosp` must have length N_age = ", N_age)
   }
 
-  # Per-age hospitalisation prob for vaccinated classes
+  # Per-age hospitalisation prob (or death prob) for vaccinated classes
   prob_hosp_vaccine <- (1 - vaccine_efficacy_disease) * prob_hosp
 
-  # age x vaccine-class matrix (17 x 4)
-  # Classes: [1:2] = prob_hosp (unvaccinated and vaccinated but no protection),
-  #          [3] = prob_hosp_vaccine (vaccinated and protected)
-  #          [4] = prob_hosp (waned)
+  # age x vaccine-class matrix (N_age x 4)
+  # Classes:
+  #   [1:2] = prob_hosp (unvaccinated and vaccinated but no protection),
+  #   [3]   = prob_hosp_vaccine (vaccinated and protected),
+  #   [4]   = prob_hosp (waned)
   prob_hosp_mat <- matrix(
     c(
-      prob_hosp, prob_hosp, prob_hosp_vaccine, prob_hosp
+      prob_hosp,
+      prob_hosp,
+      prob_hosp_vaccine,
+      prob_hosp
     ),
-    nrow = 17, ncol = 4
+    nrow = N_age,
+    ncol = 4
   )
 
   return(prob_hosp_mat)
 }
+
 
