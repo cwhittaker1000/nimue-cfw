@@ -1,14 +1,12 @@
 #' Process set of contact matrices ->  mixing matrices
 #'
 #' @param contact_matrix_set Set of contact matrices
-#' @param population Vector of populaion by age
+#' @param population Vector of population by age
 #'
 #' @return Processed set of mixing matrices
 matrix_set_explicit <- function(contact_matrix_set, population){
-  contact <- lapply(contact_matrix_set, process_contact_matrix_scaled_age,
-                    population = population)
+  contact <- lapply(contact_matrix_set, process_contact_matrix_scaled_age, population = population)
   mixing <- lapply(contact, div_pop, population = population)
-
   aperm(array(unlist(mixing), dim = c(dim(mixing[[1]]), length(mixing))), c(3, 1, 2))[1, , ]
 }
 
@@ -71,7 +69,6 @@ parse_country_population_mixing_matrix <- function(country = NULL,
   # If a country was provided then grab the population and matrices if needed
   if (is.null(population)) {
     population <- squire:::get_population(country)
-
     if (is.null(contact_matrix_set)) {
       contact_matrix_set <- squire:::get_mixing_matrix(country)
     }

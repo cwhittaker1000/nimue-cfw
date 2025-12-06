@@ -71,6 +71,10 @@ rel_infectiousness_vaccinated = probs$rel_infectiousness_vaccinated
 dur_V <- vaccine_pars$dur_V
 vaccine_efficacy_infection <- vaccine_pars$vaccine_efficacy_infection
 vaccine_efficacy_disease <- vaccine_pars$vaccine_efficacy_disease
+dur_vaccine_delay <- vaccine_pars$dur_vaccine_delay
+max_vaccine <- vaccine_pars$max_vaccine
+tt_vaccine <- vaccine_pars$tt_vaccine
+vaccine_coverage_mat <- vaccine_pars$vaccine_coverage_mat
 
 parameters <- function(
 
@@ -81,6 +85,10 @@ parameters <- function(
   R0 = 3,
   tt_R0 = 0,
   beta_set = NULL,
+
+  ## Mobility parameters
+  q = NULL,              # length(countries) vector
+  pi_travel = NULL,      # n_countries x n_countries matrix (home x destination)
 
   # Initial state, duration, reps
   time_period = 365,
@@ -146,7 +154,6 @@ parameters <- function(
     )
   )
 
-
   # If a vector is put in for matrix targeting
   ### NOTE: COME BACK TO THIS!!!
   # if(is.vector(vaccine_coverage_mat)){
@@ -169,6 +176,33 @@ parameters <- function(
   n_tt <- length(tt_R0)
   if (n_tt < 1L) {
     stop("`tt_R0` must have length >= 1")
+  }
+
+  ## q: length must equal number of countries; default = no travel
+  if (is.null(q)) {
+    q <- rep(0, n_countries)
+  } else {
+    if (!is.numeric(q)) {
+      stop("`q` must be numeric.")
+    }
+    if (length(q) != n_countries) {
+      stop("`q` must have length equal to `length(countries)`.")
+    }
+  }
+
+  ## pi_travel: n_countries x n_countries matrix (home x destination)
+  ## default = all zeros (no between-location mixing while away)
+  if (is.null(pi_travel)) {
+    pi_travel <- matrix(0, nrow = n_countries, ncol = n_countries)
+  } else {
+    if (!is.matrix(pi_travel)) {
+      pi_travel <- as.matrix(pi_travel)
+    }
+    expected_dim <- c(n_countries, n_countries)
+    if (!identical(dim(pi_travel), expected_dim)) {
+      stop("`pi_travel` must be a ", n_countries, " x ", n_countries,
+           " matrix (rows = home, cols = destination).")
+    }
   }
 
   ## Setting up the time-varying Rt for each country via the Rt matrix
@@ -245,6 +279,8 @@ parameters <- function(
   pars <- c(mod_init,
             list(N_age = length(population_list[[1]]),
                  N_locations = length(population_list),
+                 q = q,
+                 pi_travel = pi_travel,
                  gamma_E = gamma_E,
                  gamma_IMild = gamma_IMild,
                  gamma_ICase = gamma_ICase,

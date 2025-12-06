@@ -5,8 +5,10 @@ library(nimue)
 ## check final size is right when specifying particular R0s - check vs squire
 
 x <- run(countries = c("Nigeria", "United Kingdom"),
-         R0 = list(c(2, 1.2), c(1.2, 0.9)),
-         tt_R0 = c(0, 50),
+         R0 = list(c(2, 2), c(1.2, 1.2)),
+         q = c(0, 0.9),
+         pi_travel = matrix(data = c(0, 1, 1, 0), nrow = 2, ncol = 2, byrow = TRUE),
+         tt_R0 = c(0, 220),
          seeding_cases = c(10, 10),
          time_period = 1000)
 

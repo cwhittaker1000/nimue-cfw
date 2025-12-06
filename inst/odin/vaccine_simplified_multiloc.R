@@ -244,10 +244,23 @@ dim(rel_infectiousness_vaccinated) <- c(N_age, N_vaccine)
 ### FOI and contact matrix #####################################################
 ################################################################################
 # Generating Force of Infection
-m[, ,] <- mix_mat_set[i,j,k]
-dim(m) <- c(N_age, N_age, N_locations)
+
+## Defining the within-location mixing matrix (comprising a mixing matrix for each location hence N_age x N_age x N_locations)
 mix_mat_set[, , ] <- user()
 dim(mix_mat_set) <- c(N_age, N_age, N_locations)
+within_loc_mixing[, ,] <- mix_mat_set[i,j,k]
+dim(within_loc_mixing) <- c(N_age, N_age, N_locations)
+
+## Defining the between location mixing matrix
+##   q[i] = fraction of time residents of location i spend away from home
+##   pi_travel[i, j] = probability (conditional on being away from i) that a trip from home i goes to destination j
+##   Require: pi_travel[i, i] = 0, and sum_j pi_travel[i, j] = 1 for each i
+q[] <- user()
+dim(q) <- N_locations
+pi_travel[,] <- user()
+dim(pi_travel) <- c(N_locations, N_locations)  # home (i), dest (j)
+
+## Defining between-location mixing matrix (comprising a mixing matrix for between locations, initially assuming no age-specific mobility)
 
 # Interpolation for beta ## Double check I HAVE THE MATRIX BETA_SET THE RIGHT WAY ROUND HERE I THINK BASED ON https://mrc-ide.github.io/odin/articles/odin.html#interpolating-functions
 tt_beta[] <- user()
@@ -258,19 +271,34 @@ dim(beta_set) <- c(length(tt_beta), N_locations)
 dim(beta) <- N_locations
 
 # Generating Force of Infection
-temp_rel[,,] <- (IMild[i,j,k] * rel_infectiousness_vaccinated[i,j]) + (ICase[i,j,k] * rel_infectiousness_vaccinated[i,j])
-temp[,] <- sum(temp_rel[i,,j])
-dim(temp_rel) <- c(N_age, N_vaccine, N_locations)
-dim(temp) <- c(N_age, N_locations)
-s_ij[,,] <- m[i, j, k] * temp[j,k] * rel_infectiousness[j]
-dim(s_ij) <- c(N_age, N_age, N_locations)
-lambda[,] <- beta[j] * sum(s_ij[i, ,j])
-dim(lambda) <- c(N_age, N_locations)
 
-## Note that the /N is baked in during the building of m outside the model; fine when pop size doesn't change dramatically over
-## pandemic but have to be careful with very high IFRs.
-################################################################################
-################################################################################
+## 1) Infectiousness by age & location
+temp_rel[,,] <- (IMild[i,j,k] * rel_infectiousness_vaccinated[i,j]) + (ICase[i,j,k] * rel_infectiousness_vaccinated[i,j])
+dim(temp_rel) <- c(N_age, N_vaccine, N_locations)
+temp[,] <- sum(temp_rel[i,,j])
+dim(temp) <- c(N_age, N_locations)
+
+## 2) Age-structured mixing within each *physical* location
+s_ij[,,] <- within_loc_mixing[i, j, k] * temp[j,k] * rel_infectiousness[j]
+dim(s_ij) <- c(N_age, N_age, N_locations)
+
+## 3) Local FOI: FOI experienced when physically in location i
+##    (susceptible age = i, location = j)
+lambda_local[,] <- beta[j] * sum(s_ij[i, ,j])
+dim(lambda_local) <- c(N_age, N_locations)
+
+## 4) Travel FOI: define travel lambda here
+## For each age i and *home* location j:
+##   lambda_travel[i, j] = sum_k pi_travel[j, k] * lambda_local[i, k]
+## i.e. average FOI over destinations, conditional on being away
+travel_weighted[,,] <- lambda_local[i, k] * pi_travel[j, k]
+dim(travel_weighted) <- c(N_age, N_locations, N_locations)
+lambda_travel[,] <- sum(travel_weighted[i, j, ])
+dim(lambda_travel) <- c(N_age, N_locations)
+
+## 5 Total FOI : Add local and travel lambda here
+lambda[,] <- (1 - q[j]) * lambda_local[i, j] + q[j] * lambda_travel[i, j]
+dim(lambda) <- c(N_age, N_locations)
 
 ################################################################################
 ### Output #####################################################################

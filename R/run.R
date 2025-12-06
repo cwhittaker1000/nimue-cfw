@@ -146,6 +146,10 @@ run <- function(
   tt_R0 = 0,
   beta_set = NULL,
 
+  ## Mobility parameters
+  q = NULL,              # length(countries) vector
+  pi_travel = NULL,      # n_countries x n_countries matrix (home x destination)
+
   # initial state, duration, reps
   time_period = 365,
   replicates = 1,
@@ -202,6 +206,8 @@ run <- function(
                      R0 = R0,
                      tt_R0 = tt_R0 ,
                      beta_set = beta_set,
+                     q = q,
+                     pi_travel = pi_travel,
                      time_period = time_period,
                      seeding_cases = seeding_cases,
                      seeding_age_order = seeding_age_order,
@@ -215,9 +221,7 @@ run <- function(
                      dur_IHosp = dur_IHosp,
                      dur_V = dur_V,
                      vaccine_efficacy_infection = vaccine_efficacy_infection,
-                     tt_vaccine_efficacy_infection = tt_vaccine_efficacy_infection,
                      vaccine_efficacy_disease = vaccine_efficacy_disease,
-                     tt_vaccine_efficacy_disease = tt_vaccine_efficacy_disease,
                      max_vaccine = max_vaccine,
                      tt_vaccine = tt_vaccine,
                      dur_vaccine_delay = dur_vaccine_delay,
@@ -229,8 +233,6 @@ run <- function(
   mod_gen = vaccine_simplified_multiloc
 
   # Running the Model
-  pars$prob_hosp <- pars$prob_hosp[1, , ]
-  pars$prob_death_hosp <- pars$prob_death_hosp[1, , ]
   mod <- mod_gen$new(user = pars, unused_user_action = "ignore", use_dde = use_dde)
 
   # Daily output by default
