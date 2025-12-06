@@ -43,14 +43,14 @@ init <- function(population_list, seeding_cases, seeding_age_order = NULL, init 
       }
     }
 
-    # Initialize output arrays: 17 x 6 x N_locations
-    S_0 <- array(0, dim = c(17, 6, N_locations))
-    E_0 <- array(0, dim = c(17, 6, N_locations))
-    D_0 <- array(0, dim = c(17, 6, N_locations))
-    R_0 <- array(0, dim = c(17, 6, N_locations))
-    ICase_0 <- array(0, dim = c(17, 6, N_locations))
-    IMild_0 <- array(0, dim = c(17, 6, N_locations))
-    IHosp_0 <- array(0, dim = c(17, 6, N_locations))
+    # Initialize output arrays: 17 x 4 x N_locations
+    S_0 <- array(0, dim = c(17, 4, N_locations))
+    E_0 <- array(0, dim = c(17, 4, N_locations))
+    D_0 <- array(0, dim = c(17, 4, N_locations))
+    R_0 <- array(0, dim = c(17, 4, N_locations))
+    ICase_0 <- array(0, dim = c(17, 4, N_locations))
+    IMild_0 <- array(0, dim = c(17, 4, N_locations))
+    IHosp_0 <- array(0, dim = c(17, 4, N_locations))
     age_group_indices <- c(8, 9, 10, 11) # age_group indices corresponding to middle-aged travellers
 
     # Loop over locations

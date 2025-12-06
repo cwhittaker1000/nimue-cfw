@@ -140,6 +140,7 @@ run <- function(
 
   # demography
   countries = NULL,
+  age_breaks = NULL,   # user-specified age group breaks [0, a), [a, b), ..., [e, 100)
 
   # transmission
   R0 = 3,
@@ -203,6 +204,7 @@ run <- function(
 
   # create parameter list
   pars <- parameters(countries = countries,
+                     age_breaks = age_breaks,
                      R0 = R0,
                      tt_R0 = tt_R0 ,
                      beta_set = beta_set,
@@ -249,6 +251,7 @@ run <- function(
   parameters$beta_set <- pars$beta_set
   parameters$seeding_cases <- pars$E1_0
   parameters$contact_matrix_set <- pars$contact_matrix_set
+  parameters$age_breaks <- age_breaks
 
   out <- list(output = results, parameters = parameters, model = mod, odin_parameters = pars)
   out <- structure(out, class = "nimue_simulation")

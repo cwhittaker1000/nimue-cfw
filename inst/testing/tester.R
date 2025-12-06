@@ -12,6 +12,8 @@ x <- run(countries = c("Nigeria", "United Kingdom"),
          seeding_cases = c(10, 10),
          time_period = 1000)
 
+squire:::get_population("France")
+
 output1 <- format_multiloc(x)
 
 ggplot(output1, aes(x = t, y = value, col = compartment))  +

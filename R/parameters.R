@@ -80,6 +80,7 @@ parameters <- function(
 
   # Demography
   countries = NULL,
+  age_breaks = NULL,
 
   # Transmission
   R0 = 3,
@@ -119,60 +120,75 @@ parameters <- function(
   dur_vaccine_delay,
   vaccine_coverage_mat) {
 
-  # Handle country population args
-  population_list <- vector(mode = "list", length = length(countries))
-  contact_matrix_list <- vector(mode = "list", length = length(countries))
-  for (i in 1:length(countries)) {
+  ## ---------------------------------------------------------------------------
+  ## 1. Load raw population and contact matrices (canonical 17 age groups)
+  ## ---------------------------------------------------------------------------
+  n_countries <- length(countries)
+  population_raw_list <- vector(mode = "list", length = n_countries)
+  contact_matrix_list <- vector(mode = "list", length = n_countries)
+
+  for (i in seq_len(n_countries)) {
     cpm <- parse_country_population_mixing_matrix(country = countries[i],
                                                   population = NULL,
                                                   contact_matrix_set = NULL)
-    population_list[[i]] <- cpm$population
-    contact_matrix_list[[i]] <- cpm$contact_matrix_set  # Keep as list
+    population_raw_list[[i]] <- cpm$population  # length 17
+    contact_matrix_list[[i]] <- cpm$contact_matrix_set  # 16x16 contact matrix
   }
 
-  # Initial state and matrix formatting
-  # ----------------------------------------------------------------------------
+  ## ---------------------------------------------------------------------------
+  ## 2. Age grouping: mapping + aggregation
+  ## ---------------------------------------------------------------------------
+  age_info <- compute_age_mapping(age_breaks)
+  mapping      <- age_info$mapping       # length 17
+  age_breaks   <- age_info$age_breaks    # possibly defaulted
+  N_age        <- age_info$N_age         # new number of age groups
 
-  # Initialise initial conditions
+  # Aggregate population & contact matrices to chosen age groups
+  population_list       <- vector("list", n_countries)
+  baseline_matrix_list  <- vector("list", n_countries)  # for Rt->beta
+  mixing_matrix_list    <- vector("list", n_countries)  # per-capita mixing
+  for (i in seq_len(n_countries)) {
+
+    # Get baseline population with 17 age-groups
+    pop17 <- population_raw_list[[i]]
+
+    # First: process original contact matrix to 17x17
+    C17 <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], pop17)
+
+    # Aggregate to new age groups
+    agg <- aggregate_population_and_matrix(pop17, C17, mapping, N_age)
+    population_list[[i]]      <- agg$population  # length N_age
+    baseline_matrix_list[[i]] <- agg$contact     # N_age x N_age
+
+    # Mixing matrix used inside the model: divide by population (as before)
+    mixing_matrix_list[[i]] <- div_pop(agg$contact, agg$population)
+  }
+
+  ## ---------------------------------------------------------------------------
+  ## 3. Initialise state with aggregated populations
+  ## ---------------------------------------------------------------------------
   mod_init <- init(population_list, seeding_cases, seeding_age_order, init)
 
-  # Convert contact matrices to input matrices
-  stopifnot(length(population_list) == length(contact_matrix_list))
-  matrices_set_list <- Map(
-    function(contact_set, pop) {
-      matrix_set_explicit(list(contact_set), pop)
-    },
-    contact_matrix_list,
-    population_list
-  )
+  ## Build 3D mixing array: [age, age, location]
   matrices_set_array <- array(
-    unlist(matrices_set_list, use.names = FALSE),
+    unlist(mixing_matrix_list, use.names = FALSE),
     dim = c(
-      nrow(matrices_set_list[[1]]),
-      ncol(matrices_set_list[[1]]),
-      length(matrices_set_list)
+      N_age,
+      N_age,
+      n_countries
     )
   )
 
-  # If a vector is put in for matrix targeting
-  ### NOTE: COME BACK TO THIS!!!
-  # if(is.vector(vaccine_coverage_mat)){
-  #   vaccine_coverage_mat <- matrix(vaccine_coverage_mat, ncol = 17)
-  # }
-
-  # Convert and Generate Parameters As Required
-  # ----------------------------------------------------------------------------
-
-  # durations
-  gamma_E = 1/dur_E
-  gamma_IMild = 1/dur_IMild
-  gamma_ICase = 1/dur_ICase
-  gamma_IHosp = 1/dur_IHosp
-  gamma_V <- 2 * 1/dur_V
+  ## ---------------------------------------------------------------------------
+  ## 4. Durations and time-varying Rt
+  ## ---------------------------------------------------------------------------
+  gamma_E        <- 1 / dur_E
+  gamma_IMild    <- 1 / dur_IMild
+  gamma_ICase    <- 1 / dur_ICase
+  gamma_IHosp    <- 1 / dur_IHosp
+  gamma_V        <- 2 * 1 / dur_V
   gamma_vaccine_delay <- 2 * 1 / dur_vaccine_delay
 
-  ## Setting up time-varying Rt
-  n_countries <- length(countries)
   n_tt <- length(tt_R0)
   if (n_tt < 1L) {
     stop("`tt_R0` must have length >= 1")
@@ -242,43 +258,109 @@ parameters <- function(
     }
   }
 
-  ## Converting Rt to betas for each country
-  # beta_set is i timepoints and j countries
+  ## 5. Aggregate age-specific parameters to new age groups (if needed)
+  ## -------------------------------------------------------------------
+
+  ## Global population by canonical 17 age bands (sum across countries)
+  pop_weights17 <- Reduce(`+`, population_raw_list)  # each element is length 17
+
+  # prob_hosp
+  if (length(prob_hosp) == length(mapping)) {
+    prob_hosp <- aggregate_age_vector(prob_hosp, mapping, N_age,
+                                      weights = pop_weights17,
+                                      name = "prob_hosp")
+  } else if (length(prob_hosp) != N_age) {
+    stop("`prob_hosp` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
+  # prob_death_hosp
+  if (length(prob_death_hosp) == length(mapping)) {
+    prob_death_hosp <- aggregate_age_vector(prob_death_hosp, mapping, N_age,
+                                            weights = pop_weights17,
+                                            name = "prob_death_hosp")
+  } else if (length(prob_death_hosp) != N_age) {
+    stop("`prob_death_hosp` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
+  # rel_infectiousness
+  if (length(rel_infectiousness) == length(mapping)) {
+    rel_infectiousness <- aggregate_age_vector(rel_infectiousness, mapping, N_age,
+                                               weights = pop_weights17,
+                                               name = "rel_infectiousness")
+  } else if (length(rel_infectiousness) != N_age) {
+    stop("`rel_infectiousness` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
+  # p_dist
+  if (length(p_dist) == length(mapping)) {
+    p_dist <- aggregate_age_vector(p_dist, mapping, N_age,
+                                   weights = pop_weights17,
+                                   name = "p_dist")
+  } else if (length(p_dist) != N_age) {
+    stop("`p_dist` must have length 17 or length equal to the number of age groups implied by `age_breaks`.")
+  }
+
+  ## ---------------------------------------------------------------------------
+  ## 6. Convert Rt to betas for each country using aggregated matrices
+  ## ---------------------------------------------------------------------------
   beta_set <- matrix(NA_real_, nrow = n_tt, ncol = n_countries)
   for (i in seq_len(n_countries)) {
 
-    # Country-specific baseline mixing matrix
-    baseline_matrix <- process_contact_matrix_scaled_age(contact_matrix_list[[i]], population_list[[i]] )
+    # Country-specific baseline mixing matrix (already aggregated)
+    baseline_matrix <- baseline_matrix_list[[i]]
 
     # Time-varying beta for this country
-    beta_set[, i] <- vapply(seq_len(n_tt), function(j) { beta_est_infectiousness(
-      dur_IMild = dur_IMild, dur_ICase = dur_ICase,
-      prob_hosp = prob_hosp,
-      mixing_matrix = baseline_matrix,
-      rel_infectiousness = rel_infectiousness,
-      R0 = Rt_mat[j, i])
-      }, numeric(1))
+    beta_set[, i] <- vapply(
+      seq_len(n_tt),
+      function(j) {
+        beta_est_infectiousness(
+          dur_IMild = dur_IMild, dur_ICase = dur_ICase,
+          prob_hosp = prob_hosp,
+          mixing_matrix = baseline_matrix,
+          rel_infectiousness = rel_infectiousness,
+          R0 = Rt_mat[j, i]
+        )
+      },
+      numeric(1)
+    )
   }
 
-  # normalise to sum to 1
-  p_dist <- matrix(rep(p_dist, 6), nrow = 17, ncol = 6)
-  p_dist <- p_dist/mean(p_dist)
+  ## ---------------------------------------------------------------------------
+  ## 7. p_dist matrix, vaccine parameters, VE formatting
+  ## ---------------------------------------------------------------------------
+  N_vaccine_states <- 4
+  p_dist_mat <- matrix(rep(p_dist, N_vaccine_states),
+                       nrow = N_age,
+                       ncol = N_vaccine_states)
+  p_dist_mat <- p_dist_mat / mean(p_dist_mat)
 
-  # Format vaccine-specific parameters
-  gamma_vaccine <- c(0, gamma_vaccine_delay, gamma_vaccine_delay, gamma_V, gamma_V, 0)
+  p_dist <- p_dist_mat
+
+  gamma_vaccine <- c(0, gamma_vaccine_delay, gamma_V, 0)
   rel_infectiousness_vaccinated <- format_rel_inf_vacc_for_odin(rel_infectiousness_vaccinated)
 
   # Vaccine efficacy setup for the model
-  # First the vaccine efficacy infection
-  vaccine_efficacy_infection_odin_array <- format_ve_i_for_odin(vaccine_efficacy_infection = vaccine_efficacy_infection)
-  # Second the vaccine efficacy disease affecting prob_hosp
-  prob_hosp_odin_array <- format_ve_d_for_odin(vaccine_efficacy_disease = vaccine_efficacy_disease, prob_hosp = prob_hosp)
-  prob_death_hosp_odin_array <- format_ve_d_for_odin(vaccine_efficacy_disease = 0, prob_hosp = prob_death_hosp)
+  vaccine_efficacy_infection_odin_array <- format_ve_i_for_odin(
+    vaccine_efficacy_infection = vaccine_efficacy_infection
+  )
+  prob_hosp_odin_array <- format_ve_d_for_odin(
+    vaccine_efficacy_disease = vaccine_efficacy_disease,
+    prob_hosp = prob_hosp
+  )
+  prob_death_hosp_odin_array <- format_ve_d_for_odin(
+    vaccine_efficacy_disease = 0,
+    prob_hosp = prob_death_hosp
+  )
+
+  ## ---------------------------------------------------------------------------
+  ## 8. Collate parameters
+  ## ---------------------------------------------------------------------------
 
   # Collate Parameters Into List
   pars <- c(mod_init,
-            list(N_age = length(population_list[[1]]),
-                 N_locations = length(population_list),
+            list(N_age = N_age,
+                 N_locations = n_countries,
+                 age_breaks = age_breaks,
                  q = q,
                  pi_travel = pi_travel,
                  gamma_E = gamma_E,
@@ -298,7 +380,7 @@ parameters <- function(
                  tt_vaccine = tt_vaccine,
                  vaccine_efficacy_infection = vaccine_efficacy_infection_odin_array,
                  vaccine_coverage_mat = vaccine_coverage_mat,
-                 N_vaccine = 6,
+                 N_vaccine = 4,
                  N_prioritisation_steps = nrow(vaccine_coverage_mat),
                  gamma_vaccine = gamma_vaccine))
 
@@ -364,9 +446,9 @@ format_rel_inf_vacc_for_odin <- function(rel_inf_vacc) {
     rel_inf_vacc <- rep(rel_inf_vacc, 17)
   }
 
-  return(matrix(c(rep(1, 17 * 3),
-                  rel_inf_vacc, rel_inf_vacc,
-                  rep(1, 17)), nrow = 17, ncol = 6))
+  return(matrix(c(rep(1, 17 * 2),
+                  rel_inf_vacc,
+                  rep(1, 17)), nrow = 17, ncol = 4))
 
 }
 
@@ -386,14 +468,16 @@ format_ve_i_for_odin <- function(vaccine_efficacy_infection) {
   ve_i <- 1 - vaccine_efficacy_infection
 
   # age x vaccine-class matrix (17 x 6)
-  # Classes: [1:3] = 1, [4:5] = ve_i, [6] = 1 (as in original nimue logic)
+  # Classes: [1:2] = 1,
+  #          [3] = ve_i,
+  #          [4] = 1 (as in original nimue logic)
   vaccine_efficacy_infection_mat <- matrix(
     c(
-      rep(1, 17 * 3),
-      ve_i, ve_i,
+      rep(1, 17 * 2),
+      ve_i,
       rep(1, 17)
     ),
-    nrow = 17, ncol = 6
+    nrow = 17, ncol = 4
   )
 
   return(vaccine_efficacy_infection_mat)
@@ -419,15 +503,15 @@ format_ve_d_for_odin <- function(vaccine_efficacy_disease,
   # Per-age hospitalisation prob for vaccinated classes
   prob_hosp_vaccine <- (1 - vaccine_efficacy_disease) * prob_hosp
 
-  # age x vaccine-class matrix (17 x 6)
-  # Classes: [1:3] = prob_hosp, [4:5] = prob_hosp_vaccine, [6] = prob_hosp
+  # age x vaccine-class matrix (17 x 4)
+  # Classes: [1:2] = prob_hosp (unvaccinated and vaccinated but no protection),
+  #          [3] = prob_hosp_vaccine (vaccinated and protected)
+  #          [4] = prob_hosp (waned)
   prob_hosp_mat <- matrix(
     c(
-      prob_hosp, prob_hosp, prob_hosp,
-      prob_hosp_vaccine, prob_hosp_vaccine,
-      prob_hosp
+      prob_hosp, prob_hosp, prob_hosp_vaccine, prob_hosp
     ),
-    nrow = 17, ncol = 6
+    nrow = 17, ncol = 4
   )
 
   return(prob_hosp_mat)
