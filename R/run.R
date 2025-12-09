@@ -176,6 +176,7 @@ run <- function(
   vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
   vaccine_efficacy_disease = vaccine_pars$vaccine_efficacy_disease,
   max_vaccine = vaccine_pars$max_vaccine,
+  max_vaccine_set = NULL,   # time x location matrix
   tt_vaccine = vaccine_pars$tt_vaccine,
   dur_vaccine_delay = vaccine_pars$dur_vaccine_delay,
   vaccine_coverage_mat = vaccine_pars$vaccine_coverage_mat,
@@ -225,6 +226,7 @@ run <- function(
                      vaccine_efficacy_infection = vaccine_efficacy_infection,
                      vaccine_efficacy_disease = vaccine_efficacy_disease,
                      max_vaccine = max_vaccine,
+                     max_vaccine_set  = max_vaccine_set,
                      tt_vaccine = tt_vaccine,
                      dur_vaccine_delay = dur_vaccine_delay,
                      vaccine_coverage_mat = vaccine_coverage_mat,
@@ -247,10 +249,6 @@ run <- function(
 
   # Summarise inputs
   parameters <- args
-  parameters$population <- pars$population
-  parameters$beta_set <- pars$beta_set
-  parameters$seeding_cases <- pars$E1_0
-  parameters$contact_matrix_set <- pars$contact_matrix_set
   parameters$age_breaks <- age_breaks
 
   out <- list(output = results, parameters = parameters, model = mod, odin_parameters = pars)

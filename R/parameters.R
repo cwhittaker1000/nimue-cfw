@@ -118,6 +118,7 @@ parameters <- function(
   vaccine_efficacy_infection,
   vaccine_efficacy_disease,
   max_vaccine,
+  max_vaccine_set = NULL,
   tt_vaccine,
   dur_vaccine_delay,
   vaccine_coverage_mat) {
@@ -364,6 +365,13 @@ parameters <- function(
                                                      name = "vaccine_efficacy_disease")
   } else if (length(vaccine_efficacy_disease) != 1L && length(vaccine_efficacy_disease) != N_age) {
     stop("`vaccine_efficacy_disease` must have length 1, 17, or length equal to the number of age groups implied by `age_breaks`.")
+  }
+  ## 5b. Check vaccine_coverage_mat has N_age columns
+  if (is.null(dim(vaccine_coverage_mat))) {
+    vaccine_coverage_mat <- matrix(vaccine_coverage_mat, nrow = 1)
+  }
+  if (ncol(vaccine_coverage_mat) != N_age) {
+    stop("`vaccine_coverage_mat` must have N_age = ", N_age, " columns (one per age group). Got ", ncol(vaccine_coverage_mat), " columns instead.")
   }
 
   ## ---------------------------------------------------------------------------
