@@ -21,7 +21,7 @@ vaccine_simplified_multiloc_ <- R6::R6Class(
     dll = "nimue",
     user = c("beta_set", "D_0", "E_0", "gamma_E", "gamma_ICase",
              "gamma_IHosp", "gamma_IMild", "gamma_vaccine", "ICase_0",
-             "IHosp_0", "IMild_0", "max_vaccine", "mix_mat_set", "N_age",
+             "IHosp_0", "IMild_0", "max_vaccine_set", "mix_mat_set", "N_age",
              "N_locations", "N_prioritisation_steps", "N_vaccine",
              "pi_travel", "prob_death_hosp", "prob_hosp", "q", "R_0",
              "rel_infectiousness", "rel_infectiousness_vaccinated", "S_0",
