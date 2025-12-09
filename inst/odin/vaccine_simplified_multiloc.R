@@ -263,14 +263,24 @@ dim(mix_mat_set) <- c(N_age, N_age, N_locations)
 within_loc_mixing[, ,] <- mix_mat_set[i,j,k]
 dim(within_loc_mixing) <- c(N_age, N_age, N_locations)
 
-## Defining the between location mixing matrix
-##   q[i] = fraction of time residents of location i spend away from home
-##   pi_travel[i, j] = probability (conditional on being away from i) that a trip from home i goes to destination j
-##   Require: pi_travel[i, i] = 0, and sum_j pi_travel[i, j] = 1 for each i
-q[] <- user()
-dim(q) <- N_locations
-pi_travel[,] <- user()
-dim(pi_travel) <- c(N_locations, N_locations)  # home (i), dest (j)
+## Defining the between-location mixing matrices
+##   q_flight[i]     = fraction of time residents of location i spend away via flights
+##   q_non_flight[i] = fraction of time residents of location i spend away via non-flight (gravity) travel
+##   pi_travel_flight[i, j]      = probability (conditional on being away via flights from i)
+##                                 that a trip from home i goes to destination j
+##   pi_travel_non_flight[i, j]  = probability (conditional on being away via non-flight travel from i)
+##                                 that movement from home i goes to destination j
+## Require:
+##   pi_travel_flight[i, i]     = 0, sum_j pi_travel_flight[i, j]     = 1 for each i with q_flight[i] > 0
+##   pi_travel_non_flight[i, i] = 0, sum_j pi_travel_non_flight[i, j] = 1 for each i with q_non_flight[i] > 0
+q_flight[] <- user()
+dim(q_flight) <- N_locations
+q_non_flight[] <- user()
+dim(q_non_flight) <- N_locations
+pi_travel_flight[,] <- user()
+dim(pi_travel_flight) <- c(N_locations, N_locations)   # home (i), dest (j)
+pi_travel_non_flight[,] <- user()
+dim(pi_travel_non_flight) <- c(N_locations, N_locations)  # home (i), dest (j)
 
 ## Defining between-location mixing matrix (comprising a mixing matrix for between locations, initially assuming no age-specific mobility)
 
@@ -299,17 +309,32 @@ dim(s_ij) <- c(N_age, N_age, N_locations)
 lambda_local[,] <- beta[j] * sum(s_ij[i, ,j])
 dim(lambda_local) <- c(N_age, N_locations)
 
-## 4) Travel FOI: define travel lambda here
+## 4a)  Travel FOI via flight-based mixing
 ## For each age i and *home* location j:
-##   lambda_travel[i, j] = sum_k pi_travel[j, k] * lambda_local[i, k]
+##   lambda_travel_flight[i, j] = sum_k pi_travel_flight[j, k] * lambda_local[i, k]
 ## i.e. average FOI over destinations, conditional on being away
-travel_weighted[,,] <- lambda_local[i, k] * pi_travel[j, k]
-dim(travel_weighted) <- c(N_age, N_locations, N_locations)
-lambda_travel[,] <- sum(travel_weighted[i, j, ])
-dim(lambda_travel) <- c(N_age, N_locations)
+travel_weighted_flight[,,] <- lambda_local[i, k] * pi_travel_flight[j, k]
+dim(travel_weighted_flight) <- c(N_age, N_locations, N_locations)
+lambda_travel_flight[,] <- sum(travel_weighted_flight[i, j, ])
+dim(lambda_travel_flight) <- c(N_age, N_locations)
 
-## 5 Total FOI : Add local and travel lambda here
-lambda[,] <- (1 - q[j]) * lambda_local[i, j] + q[j] * lambda_travel[i, j]
+## 4b) Travel FOI via non-flight (gravity-based) mixing
+## For each age i and *home* location j:
+##   lambda_travel_non_flight[i, j] =
+##       sum_k pi_travel_non_flight[j, k] * lambda_local[i, k]
+## where pi_travel_non_flight[j, k] is a gravity-derived kernel (home j -> dest k)
+travel_weighted_non_flight[,,] <- lambda_local[i, k] * pi_travel_non_flight[j, k]
+dim(travel_weighted_non_flight) <- c(N_age, N_locations, N_locations)
+lambda_travel_non_flight[,] <- sum(travel_weighted_non_flight[i, j, ])
+dim(lambda_travel_non_flight) <- c(N_age, N_locations)
+
+## 5) Total FOI: local + flight + non-flight components  ## NEW
+## q_flight[j]     = fraction of time residents of j spend away via flights
+## q_non_flight[j] = fraction of time residents of j spend away via non-flight travel
+## Total away fraction for j: q_flight[j] + q_non_flight[j]
+lambda[,] <- (1 - (q_flight[j] + q_non_flight[j])) * lambda_local[i, j] +
+             q_flight[j] * lambda_travel_flight[i, j] +
+             q_non_flight[j] * lambda_travel_non_flight[i, j]
 dim(lambda) <- c(N_age, N_locations)
 
 ################################################################################

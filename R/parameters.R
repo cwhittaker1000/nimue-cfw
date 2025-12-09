@@ -90,8 +90,10 @@ parameters <- function(
   beta_set = NULL,
 
   ## Mobility parameters
-  q = NULL,              # length(countries) vector
-  pi_travel = NULL,      # n_countries x n_countries matrix (home x destination)
+  q_flight = NULL,              # length(countries) vector
+  pi_travel_flight = NULL,      # n_countries x n_countries matrix (home x destination)
+  q_non_flight = NULL,              # length(countries) vector
+  pi_travel_non_flight = NULL,      # n_countries x n_countries matrix (home x destination)
 
   # Initial state, duration, reps
   time_period = 365,
@@ -209,17 +211,60 @@ parameters <- function(
     }
   }
 
-  ## pi_travel: n_countries x n_countries matrix (home x destination)
-  ## default = all zeros (no between-location mixing while away)
-  if (is.null(pi_travel)) {
-    pi_travel <- matrix(0, nrow = n_countries, ncol = n_countries)
+  ## ---------------------------------------------------------------------------
+  ## 4a. Mobility: q_flight, q_non_flight, pi_travel_flight, pi_travel_non_flight
+  ## ---------------------------------------------------------------------------
+
+  ## q_flight: length must equal number of countries; default = no flight travel
+  if (is.null(q_flight)) {
+    q_flight <- rep(0, n_countries)
   } else {
-    if (!is.matrix(pi_travel)) {
-      pi_travel <- as.matrix(pi_travel)
+    if (!is.numeric(q_flight)) {
+      stop("`q_flight` must be numeric.")
+    }
+    if (length(q_flight) != n_countries) {
+      stop("`q_flight` must have length equal to `length(countries)`.")
+    }
+  }
+
+  ## q_non_flight: length must equal number of countries; default = no non-flight travel
+  if (is.null(q_non_flight)) {
+    q_non_flight <- rep(0, n_countries)
+  } else {
+    if (!is.numeric(q_non_flight)) {
+      stop("`q_non_flight` must be numeric.")
+    }
+    if (length(q_non_flight) != n_countries) {
+      stop("`q_non_flight` must have length equal to `length(countries)`.")
+    }
+  }
+
+  ## pi_travel_flight: n_countries x n_countries matrix (home x destination)
+  ## default = all zeros (no between-location mixing via flights)
+  if (is.null(pi_travel_flight)) {
+    pi_travel_flight <- matrix(0, nrow = n_countries, ncol = n_countries)
+  } else {
+    if (!is.matrix(pi_travel_flight)) {
+      pi_travel_flight <- as.matrix(pi_travel_flight)
     }
     expected_dim <- c(n_countries, n_countries)
-    if (!identical(dim(pi_travel), expected_dim)) {
-      stop("`pi_travel` must be a ", n_countries, " x ", n_countries,
+    if (!identical(dim(pi_travel_flight), expected_dim)) {
+      stop("`pi_travel_flight` must be a ", n_countries, " x ", n_countries,
+           " matrix (rows = home, cols = destination).")
+    }
+  }
+
+  ## pi_travel_non_flight: n_countries x n_countries matrix (home x destination)
+  ## default = all zeros (no between-location mixing via non-flight travel)
+  if (is.null(pi_travel_non_flight)) {
+    pi_travel_non_flight <- matrix(0, nrow = n_countries, ncol = n_countries)
+  } else {
+    if (!is.matrix(pi_travel_non_flight)) {
+      pi_travel_non_flight <- as.matrix(pi_travel_non_flight)
+    }
+    expected_dim <- c(n_countries, n_countries)
+    if (!identical(dim(pi_travel_non_flight), expected_dim)) {
+      stop("`pi_travel_non_flight` must be a ", n_countries, " x ", n_countries,
            " matrix (rows = home, cols = destination).")
     }
   }
@@ -428,8 +473,10 @@ parameters <- function(
             list(N_age = N_age,
                  N_locations = n_countries,
                  age_breaks = age_breaks,
-                 q = q,
-                 pi_travel = pi_travel,
+                 q_flight = q_flight,
+                 pi_travel_flight = pi_travel_flight,
+                 q_non_flight = q_non_flight,
+                 pi_travel_non_flight = pi_travel_non_flight,
                  gamma_E = gamma_E,
                  gamma_IMild = gamma_IMild,
                  gamma_ICase = gamma_ICase,

@@ -148,8 +148,10 @@ run <- function(
   beta_set = NULL,
 
   ## Mobility parameters
-  q = NULL,              # length(countries) vector
-  pi_travel = NULL,      # n_countries x n_countries matrix (home x destination)
+  q_flight = NULL,              # length(countries) vector
+  pi_travel_flight = NULL,      # n_countries x n_countries matrix (home x destination)
+  q_non_flight = NULL,              # length(countries) vector
+  pi_travel_non_flight = NULL,      # n_countries x n_countries matrix (home x destination)
 
   # initial state, duration, reps
   time_period = 365,
@@ -209,8 +211,10 @@ run <- function(
                      R0 = R0,
                      tt_R0 = tt_R0 ,
                      beta_set = beta_set,
-                     q = q,
-                     pi_travel = pi_travel,
+                     q_flight = q_flight,
+                     pi_travel_flight = pi_travel_flight,
+                     q_non_flight = q_non_flight,
+                     pi_travel_non_flight = pi_travel_non_flight,
                      time_period = time_period,
                      seeding_cases = seeding_cases,
                      seeding_age_order = seeding_age_order,
