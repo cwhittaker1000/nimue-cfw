@@ -169,7 +169,7 @@ parameters <- function(
   ## ---------------------------------------------------------------------------
   ## 3. Initialise state with aggregated populations
   ## ---------------------------------------------------------------------------
-  mod_init <- init(population_list, seeding_cases, seeding_age_order = NULL, init = NULL)
+  mod_init <- init(population_list, seeding_cases, seeding_age_order, init)
 
   ## Build 3D mixing array: [age, age, location]
   matrices_set_array <- array(
@@ -260,6 +260,42 @@ parameters <- function(
     }
   }
 
+  ## ---------------------------------------------------------------------------
+  ## 4b. Vaccine capacity: build max_vaccine_set (time x location)
+  ## ---------------------------------------------------------------------------
+  n_tt_vac <- length(tt_vaccine)
+  if (n_tt_vac < 1L) {
+    stop("`tt_vaccine` must have length >= 1")
+  }
+
+  if (!is.null(max_vaccine_set)) {
+    # User supplied full schedule (preferred for location-specific capacity)
+    max_vaccine_set <- as.matrix(max_vaccine_set)
+    expected_dim <- c(n_tt_vac, n_countries)
+    if (!identical(dim(max_vaccine_set), expected_dim)) {
+      stop("`max_vaccine_set` must be a matrix with nrow = length(tt_vaccine) and ncol = length(countries).")
+    }
+  } else {
+    # Construct max_vaccine_set from simpler max_vaccine inputs
+    if (!is.numeric(max_vaccine)) {
+      stop("`max_vaccine` must be numeric when `max_vaccine_set` is NULL.")
+    }
+
+    if (length(max_vaccine) == 1L) {
+      # Same capacity for all locations and all times
+      max_vaccine_set <- matrix(max_vaccine, nrow = n_tt_vac, ncol = n_countries)
+    } else if (length(max_vaccine) == n_tt_vac) {
+      # Same time-varying schedule for all locations
+      max_vaccine_set <- matrix(max_vaccine, nrow = n_tt_vac, ncol = n_countries)
+    } else if (length(max_vaccine) == n_countries) {
+      # Different constant capacity per location over time
+      max_vaccine_set <- matrix(max_vaccine, nrow = n_tt_vac, ncol = n_countries, byrow = TRUE)
+    } else {
+      stop("When `max_vaccine_set` is NULL, `max_vaccine` must have length 1, length(tt_vaccine), or length(countries).")
+    }
+  }
+
+  ## ---------------------------------------------------------------------------
   ## 5. Aggregate age-specific parameters to new age groups (if needed)
   ## -------------------------------------------------------------------
 
@@ -399,8 +435,9 @@ parameters <- function(
                  tt_beta = tt_R0,
                  beta_set = beta_set,
                  population_list = population_list,
-                 max_vaccine = max_vaccine,
-                 tt_vaccine = tt_vaccine,
+                 max_vaccine       = max_vaccine,
+                 max_vaccine_set   = max_vaccine_set,
+                 tt_vaccine        = tt_vaccine,
                  vaccine_efficacy_infection = vaccine_efficacy_infection_odin_array,
                  vaccine_coverage_mat = vaccine_coverage_mat,
                  N_vaccine = 4,
