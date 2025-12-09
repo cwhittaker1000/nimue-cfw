@@ -173,12 +173,12 @@ dim(D_overall) <- c(N_age, N_locations)
 
 # Defining key vaccination inputs
 
-## Vaccine prioritisation coverage matrix
+## Vaccine prioritisation coverage matrix - assumed same across locations
 N_prioritisation_steps <- user()
 vaccine_coverage_mat[,] <- user()
 dim(vaccine_coverage_mat) <- c(N_prioritisation_steps, N_age)
 
-## Vaccine Efficacy against infection
+## Vaccine Efficacy against infection - assumed same across locations
 vaccine_efficacy_infection[, ] <- user()
 dim(vaccine_efficacy_infection) <- c(N_age, N_vaccine)
 gamma_vaccine[] <- user() # Vector of vaccine progression parameters by vaccination status (First = 0 as handled separately as time-varying vaccination rate, Last = 0 as no progression from "previously vaccinated group)

@@ -83,8 +83,9 @@ sim <- run(
   countries   = c("United Kingdom"),
   age_breaks  = age_breaks,
   R0          = 1.5,
-  max_vaccine = 100000000,
-  vaccine_efficacy_disease = rep(0, 17),
+  max_vaccine = seq(0, 250000, length.out = 100),
+  tt_vaccine = seq(0, 350, length.out = 100),
+  vaccine_efficacy_disease = rep(0.95, 17),
   vaccine_efficacy_infection = rep(0, 17),
   tt_R0       = 0,
   time_period = 365,
@@ -111,6 +112,7 @@ output1 %>%
   summarise(D = max(value))
 
 78434
-830667
+830670
 
-1 - (396418 / 830667)
+1 - (425344 / 830667)
+
