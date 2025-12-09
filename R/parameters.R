@@ -169,7 +169,7 @@ parameters <- function(
   ## ---------------------------------------------------------------------------
   ## 3. Initialise state with aggregated populations
   ## ---------------------------------------------------------------------------
-  mod_init <- init(population_list, seeding_cases, seeding_age_order, init)
+  mod_init <- init(population_list, seeding_cases, seeding_age_order = NULL, init = NULL)
 
   ## Build 3D mixing array: [age, age, location]
   matrices_set_array <- array(

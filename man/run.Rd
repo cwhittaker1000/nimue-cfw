@@ -6,9 +6,12 @@
 \usage{
 run(
   countries = NULL,
+  age_breaks = NULL,
   R0 = 3,
   tt_R0 = 0,
   beta_set = NULL,
+  q = NULL,
+  pi_travel = NULL,
   time_period = 365,
   replicates = 1,
   seed = stats::runif(1, 0, 1e+08),
@@ -22,9 +25,7 @@ run(
   dur_IHosp = durs$dur_IHosp,
   dur_V = vaccine_pars$dur_V,
   vaccine_efficacy_infection = vaccine_pars$vaccine_efficacy_infection,
-  tt_vaccine_efficacy_infection = vaccine_pars$tt_vaccine_efficacy_infection,
   vaccine_efficacy_disease = vaccine_pars$vaccine_efficacy_disease,
-  tt_vaccine_efficacy_disease = vaccine_pars$tt_vaccine_efficacy_disease,
   max_vaccine = vaccine_pars$max_vaccine,
   tt_vaccine = vaccine_pars$tt_vaccine,
   dur_vaccine_delay = vaccine_pars$dur_vaccine_delay,
@@ -84,12 +85,6 @@ time point specified by \code{tt_vaccine_efficacy_infection}. These
 efficacies must also be length 1 numeric (a single efficacy for all age
 groups)  or length 17 numeric vector (an efficacy for each age group)}
 
-\item{tt_vaccine_efficacy_infection}{Timing of changes in vaccine efficacy
-against infection. Default = 0, which assumes fixed efficacy over time.
-Must be the same length as the length of \code{vaccine_efficacy_infection}
-when provided as a list. Time changing efficacies can occur in response to
-changing vaccines being  given and dosing strategy changes.}
-
 \item{vaccine_efficacy_disease}{Efficacy of vaccine against severe
 (requiring hospitilisation) disease (by age). This parameter must either be
 length 1 numeric (a single efficacy for all age groups) or length 17
@@ -101,12 +96,6 @@ be provided as a list, with each list element being the efficacy at each
 time point specified by \code{tt_vaccine_efficacy_disease}. These
 efficacies must also be length 1 numeric (a single efficacy for all age
 groups)  or length 17 numeric vector (an efficacy for each age group).}
-
-\item{tt_vaccine_efficacy_disease}{Timing of changes in vaccine efficacy
-against disease. Default = 0, which assumes fixed efficacy over time.
-Must be the same length as the length of \code{vaccine_efficacy_disease}
-when provided as a list. Time changing efficacies can occur in response to
-changing vaccines being  given and dosing strategy changes.}
 
 \item{max_vaccine}{The maximum number of individuals who can be vaccinated per day.}
 
@@ -227,6 +216,18 @@ death. Default = 1}
 time varying, with timing of changes given by tt_dur_R.}
 
 \item{tt_dur_R}{Timing of changes in duration of natural immunity.}
+
+\item{tt_vaccine_efficacy_infection}{Timing of changes in vaccine efficacy
+against infection. Default = 0, which assumes fixed efficacy over time.
+Must be the same length as the length of \code{vaccine_efficacy_infection}
+when provided as a list. Time changing efficacies can occur in response to
+changing vaccines being  given and dosing strategy changes.}
+
+\item{tt_vaccine_efficacy_disease}{Timing of changes in vaccine efficacy
+against disease. Default = 0, which assumes fixed efficacy over time.
+Must be the same length as the length of \code{vaccine_efficacy_disease}
+when provided as a list. Time changing efficacies can occur in response to
+changing vaccines being  given and dosing strategy changes.}
 }
 \value{
 Simulation output

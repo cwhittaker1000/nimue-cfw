@@ -71,3 +71,46 @@ ggplot(output1, aes(x = t, y = value, col = compartment))  +
   facet_wrap(location_index ~ ., scales = "free_y") +
   xlab("Time") +
   theme_bw()
+
+### testing vacciantion
+library(nimue)   # or your package name if this is a fork
+
+# Define 5 age groups:
+# [0,20), [20,40), [40,60), [60,80), [80,100)
+age_breaks <- c(0, 20, 40, 60, 80, 100)
+
+sim <- run(
+  countries   = c("United Kingdom"),
+  age_breaks  = age_breaks,
+  R0          = 1.5,
+  max_vaccine = 100000000,
+  vaccine_efficacy_disease = rep(0, 17),
+  vaccine_efficacy_infection = rep(0, 17),
+  tt_R0       = 0,
+  time_period = 365,
+  seeding_cases = 20,
+  dur_vaccine_delay = 2,
+  dur_V = 1e5,
+  use_dde     = TRUE,
+  vaccine_coverage_mat = matrix(0.95, ncol = 5, nrow = 1)
+)
+
+output1 <- format_multiloc(sim) %>%
+  filter(compartment == "D")
+
+ggplot(output1, aes(x = t, y = value, col = compartment))  +
+  geom_line(size = 1) +
+  ylab("Infections") +
+  facet_wrap(location_index ~ ., scales = "free_y") +
+  xlab("Time") +
+  theme_bw()
+
+output1 %>%
+  filter(compartment == "D") %>%
+  group_by(location_index) %>%
+  summarise(D = max(value))
+
+78434
+830667
+
+1 - (396418 / 830667)
