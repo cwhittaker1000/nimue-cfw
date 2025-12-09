@@ -185,11 +185,19 @@ gamma_vaccine[] <- user() # Vector of vaccine progression parameters by vaccinat
 dim(gamma_vaccine) <- N_vaccine
 
 ## Interpolation of vaccination rate over time
-mv <- interpolate(tt_vaccine, max_vaccine, "constant")
+## Single loc version
+# mv <- interpolate(tt_vaccine, max_vaccine, "constant")
+# tt_vaccine[] <- user()
+# max_vaccine[] <- user()
+# dim(tt_vaccine) <- user()
+# dim(max_vaccine) <- length(tt_vaccine)
+
 tt_vaccine[] <- user()
-max_vaccine[] <- user()
-dim(tt_vaccine) <- user()
-dim(max_vaccine) <- length(tt_vaccine)
+dim(tt_vaccine) <- user()  # length T
+max_vaccine_set[ , ] <- user()  # time x location
+dim(max_vaccine_set) <- c(length(tt_vaccine), N_locations)
+mv[] <- interpolate(tt_vaccine, max_vaccine_set, "constant")
+dim(mv) <- N_locations
 
 # Track the proportion who have received vaccine in each age group
 
@@ -218,9 +226,9 @@ dim(vr_temp) <- c(N_age, N_locations)
 ## conditional on target coverage and prioritisation step we're at
 
 # Catch so vaccination rate does not exceed 1 if the number of people available for vaccination < number of vaccines
-vr_den[] <- if(sum(vr_temp[i, ]) <= mv) mv else sum(vr_temp[i, ])
+vr_den[] <- if(sum(vr_temp[, i]) <= mv[i]) mv[i] else sum(vr_temp[, i])
 dim(vr_den) <- N_locations
-vr[] <- if(mv == 0) 0 else mv / vr_den[i]  # Vaccination rate to achieve capacity given number in vaccine-eligible population
+vr[] <- if(mv[i] == 0) 0 else mv[i] / vr_den[i]  # Vaccination rate to achieve capacity given number in vaccine-eligible population
                                            # this is really "what fraction of the vr_temp i.e. vaccinable pop, can be vaccinated in a timestep with mv
 dim(vr) <- N_locations
 
