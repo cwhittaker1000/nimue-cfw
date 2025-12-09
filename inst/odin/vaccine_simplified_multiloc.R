@@ -170,19 +170,21 @@ dim(D_overall) <- c(N_age, N_locations)
 ################################################################################
 ### Vaccination capacity #######################################################
 ################################################################################
-# Vaccination
-# Vaccine prioritisation coverage matrix
+
+# Defining key vaccination inputs
+
+## Vaccine prioritisation coverage matrix
 N_prioritisation_steps <- user()
 vaccine_coverage_mat[,] <- user()
 dim(vaccine_coverage_mat) <- c(N_prioritisation_steps, N_age)
 
-# Vaccine Efficacy against infection
+## Vaccine Efficacy against infection
 vaccine_efficacy_infection[, ] <- user()
 dim(vaccine_efficacy_infection) <- c(N_age, N_vaccine)
 gamma_vaccine[] <- user() # Vector of vaccine progression parameters by vaccination status (First = 0 as handled separately as time-varying vaccination rate, Last = 0 as no progression from "previously vaccinated group)
 dim(gamma_vaccine) <- N_vaccine
 
-# Interpolation of vaccination rate over time
+## Interpolation of vaccination rate over time
 mv <- interpolate(tt_vaccine, max_vaccine, "constant")
 tt_vaccine[] <- user()
 max_vaccine[] <- user()
@@ -191,36 +193,38 @@ dim(max_vaccine) <- length(tt_vaccine)
 
 # Track the proportion who have received vaccine in each age group
 
-# Population size
+## Population size
 pop_size[,] <- sum(S[i,,j]) + sum(E[i,,j]) + sum(IMild[i,,j]) + sum(ICase[i,,j]) + sum(IHosp[i,,j]) + sum(R[i,,j])
 dim(pop_size) <- c(N_age, N_locations)
 
-# Proportion who have received vaccine
+## Proportion who have received vaccine
 pr[,] <- 1 - ((sum(S[i,1,j]) + sum(E[i,1,j]) + sum(IMild[i,1,j]) + sum(ICase[i,1,j]) + sum(IHosp[i,1,j]) + sum(R[i,1,j])) / (pop_size[i,j]))
 dim(pr) <- c(N_age, N_locations)
 
-# Isolate age groups below current target coverage which must be targeted
+## Isolate age groups below current target coverage which must be targeted
 vaccination_target_mat[,,] <- if(pr[j,k] < vaccine_coverage_mat[i,j]) 1 else 0
 dim(vaccination_target_mat) <- c(N_prioritisation_steps, N_age, N_locations)
 
-vaccine_target_vec[,] <- if(sum(vaccination_target_mat[i,, j]) == 0) 1 else 0
+vaccine_target_vec[,] <- if(sum(vaccination_target_mat[i, , j]) == 0) 1 else 0 ## for each prioritisation and location, check whether all age-groups have been vaccinated to the level required
 dim(vaccine_target_vec) <- c(N_prioritisation_steps, N_locations)
-current_index[] <- min(sum(vaccine_target_vec[, i]) + 1, N_prioritisation_steps)
+current_index[] <- min(sum(vaccine_target_vec[, i]) + 1, N_prioritisation_steps) ## picking the first prioritisation step which isn't 1 (i.e. vaccine target vec hasn't been reached across all age groups)
 dim(current_index) <- N_locations
 
 vaccination_target[,] <- vaccination_target_mat[as.integer(current_index[j]),i, j]
 dim(vaccination_target) <- c(N_age, N_locations)
-
-## check this - not sure it's right with the multi-location framework
-vr_temp[,] <- S[i,1,j] * vaccination_target[i, j] + E[i,1,j] * vaccination_target[i, j] + + R[i,1,j] * vaccination_target[i, j]
+vr_temp[,] <- S[i,1,j] * vaccination_target[i, j] + E[i,1,j] * vaccination_target[i, j] + R[i,1,j] * vaccination_target[i, j]
 dim(vr_temp) <- c(N_age, N_locations)
+## vr_temp is total number of individuals in age group and location (across disease states) and disease available to be vaccinated,
+## conditional on target coverage and prioritisation step we're at
+
 # Catch so vaccination rate does not exceed 1 if the number of people available for vaccination < number of vaccines
 vr_den[] <- if(sum(vr_temp[i, ]) <= mv) mv else sum(vr_temp[i, ])
 dim(vr_den) <- N_locations
 vr[] <- if(mv == 0) 0 else mv / vr_den[i]  # Vaccination rate to achieve capacity given number in vaccine-eligible population
+                                           # this is really "what fraction of the vr_temp i.e. vaccinable pop, can be vaccinated in a timestep with mv
 dim(vr) <- N_locations
 
-################################################################################
+######################################################################
 ################################################################################
 
 ################################################################################
