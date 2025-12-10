@@ -2,24 +2,27 @@
 % Please edit documentation in R/output_multiloc.R
 \name{format_internal_multiloc}
 \alias{format_internal_multiloc}
-\title{Internals of Format vaccine model output as data.frame}
+\title{Internal helper for formatting multi-location output}
 \usage{
 format_internal_multiloc(x, compartments, reduce_age, index, time, replicate)
 }
 \arguments{
-\item{x}{squire_simulation object}
+\item{x}{nimue_simulation object returned by \code{run()}.}
 
-\item{compartments}{Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names, e.g. \code{c("S", "E1", "E2")}}
+\item{compartments}{Vector of compartment names present in the model output,
+  e.g. \code{c("S", "R")}, or sub-compartment names (e.g.
+  \code{c("S", "E1", "E2")}).}
 
-\item{reduce_age}{Collapse age-dimension, calculating the total in the
-compartment.}
+\item{reduce_age}{Logical; if \code{TRUE} (default) collapse the age
+  dimension while retaining location indices, otherwise keep age-specific
+  counts.}
 
 \item{index}{odin output index}
 
-\item{time}{time vector}
+\item{time}{Time vector from the odin model output}
 
-\item{replicate}{output replicate number}
+\item{replicate}{Output replicate number}
 }
 \description{
-Internals of Format vaccine model output as data.frame
+Internal helper for formatting multi-location output
 }
