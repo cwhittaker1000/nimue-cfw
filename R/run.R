@@ -1,138 +1,60 @@
 #' Run the vaccine model
 #'
-#' @param population Population vector (for each age group). Default = NULL,
-#'   which will cause population to be sourced from \code{country}
-#' @param country Character for country beign simulated. WIll be used to
-#'   generate \code{population} and \code{contact_matrix_set} if
-#'   unprovided. Either \code{country} or \code{population} and
-#'   \code{contact_matrix_set} must be provided.
-#' @param contact_matrix_set Contact matrices used in simulation. Default =
-#'   NULL, which will generate this based on the \code{country}.
-#' @param tt_contact_matrix Time change points for matrix change. Default = 0
-#' @param R0 Basic Reproduction Number. Default = 3
-#' @param tt_R0 Change time points for R0. Default = 0
-#' @param beta_set Alternative parameterisation via beta rather than R0.
-#'   Default = NULL, which causes beta to be estimated from R0
-#' @param time_period Length of simulation. Default = 365
-#' @param replicates  Number of replicates. Default = 10
-#' @param seeding_cases Initial number of cases seeding the epidemic
-#' @param seed Random seed used for simulations. Deafult = runif(1, 0, 10000)
-#' @param prob_hosp probability of hospitalisation by age.
-#'   Default = c(0.000744192, 0.000634166,0.001171109, 0.002394593, 0.005346437,
-#'   0.010289885, 0.016234604, 0.023349169, 0.028944623, 0.038607042,
-#'   0.057734879, 0.072422135, 0.101602458, 0.116979814, 0.146099064,
-#'   0.176634654 ,0.180000000)
-#' @param prob_hosp_multiplier Time varying multiplier to probability of developing
-#' severe symptoms. Default = 1, which is no change to provided prob_hosp.
-#' @param tt_prob_hosp_multiplier Timing of changes to multiplier of probability of
-#' developing severe symptoms. Default = 0
-#' @param prob_severe_multiplier Time varying multiplier to probability of
-#'   hospitalisation. Default = 1, which is no change to provided prob_hosp.
-#' @param tt_prob_severe_multiplier Timing of changes to multiplier of probability
-#'   of hospitalisation. Default = 0
-#' @param prob_severe Probability of developing severe symptoms by age.
-#'   Default = c(0.05022296,	0.05022296,	0.05022296,	0.05022296,	0.05022296,
-#'   0.05022296,	0.05022296,	0.053214942, 0.05974426,	0.074602879,
-#'   0.103612417, 0.149427991, 0.223777304,	0.306985918,
-#'   0.385779555, 0.461217861, 0.709444444)
-#' @param prob_non_severe_death_treatment Probability of death from non severe
-#'   treated infection.
-#'   Default = c(0.0125702,	0.0125702,	0.0125702,	0.0125702,
-#'   0.0125702,	0.0125702,	0.0125702,	0.013361147,
-#'   0.015104687,	0.019164124,	0.027477519,	0.041762108,
-#'   0.068531658,	0.105302319,	0.149305732,	0.20349534,	0.5804312)
-#' @param prob_severe_death_treatment Probability of death from severe infection
-#'   that is treated. Default = rep(0.5, 17)
-#' @param prob_non_severe_death_no_treatment Probability of death in non severe
-#'   hospital inections that aren't treated
-#' @param prob_severe_death_no_treatment Probability of death from severe infection
-#'   that is not treated. Default = rep(0.95, 17)
-#' @param p_dist Preferentiality of age group receiving treatment relative to
-#'   other age groups when demand exceeds healthcare capacity.
-#' @param rel_infectiousness Relative infectiousness per age category relative
-#'   to maximum infectiousness category. Default = rep(1, 17)
-#' @param rel_infectiousness_vaccinated  Relative infectiousness per age
-#'   category  of vaccinated individuals relative to unvaccinated individuals.
-#'   Default = rep(1, 17), which is no impact of vaccination on onwards
-#'   transmissions
-#' @param dur_E Mean duration of incubation period (days). Default = 4.6
-#' @param dur_IMild Mean duration of mild infection (days). Default = 2.1
-#' @param dur_ICase Mean duration from symptom onset to hospitil admission (days).
-#'   Default = 4.5
-#' @param dur_get_ox_survive Mean duration of oxygen given survive. Default = 5. Can be
-#'   time varying, with timing of changes given by tt_dur_get_ox_survive.
-#' @param tt_dur_get_ox_survive Timing of changes in duration of  oxygen given survive.
-#' @param dur_get_ox_die Mean duration of oxygen given death. Default = 5. Can be
-#'   time varying, with timing of changes given by tt_dur_get_ox_die.
-#' @param tt_dur_get_ox_die Timing of changes in duration of  oxygen given death.
-#' @param dur_not_get_ox_survive Mean duration without oxygen given survive.
-#'   Default = 5
-#' @param dur_not_get_ox_die Mean duration without  oxygen given death.
-#'  Default = 5
-#' @param dur_get_mv_survive Mean duration of ventilation given survive.
-#'   Default = 7.3. Can be time varying, with timing of changes given by tt_dur_get_mv_survive.
-#' @param tt_dur_get_mv_survive Timing of changes in duration of ventilation given survive.
-#' @param dur_get_mv_die Mean duration of ventilation given death. Default = 6. Can be
-#'   time varying, with timing of changes given by tt_dur_get_mv_die.
-#' @param tt_dur_get_mv_die Timing of changes in duration of ventilation given death.
-#' @param dur_not_get_mv_survive Mean duration without ventilation given
-#'   survive. Default = 7.3
-#' @param dur_not_get_mv_die Mean duration without ventilation given
-#'   death. Default = 1
-#' @param dur_rec Duration of recovery after coming off ventilation. Default = 2
-#' @param hosp_bed_capacity General bed capacity. Can be single number of vector if capacity time-varies.
-#' @param ICU_bed_capacity ICU bed capacity. Can be single number of vector if capacity time-varies.
-#' @param tt_hosp_beds Times at which hospital bed capacity changes (Default = 0 = doesn't change)
-#' @param tt_ICU_beds Times at which ICU bed capacity changes (Default = 0 = doesn't change)
-#' @param seeding_cases Initial number of cases seeding the epidemic
-#' @param seeding_age_order Vector specifying the order in which seeds are allocated to ages.
-#'   If NULL, seeds are distributed randomly within working ages. If specified, must be a vector
-#'   of length 17 specifying the order seeds are allocated, e.g. 1:17 will allocate first seed
-#'   to the youngest age group, then the second youngest and so on. Default = NULL
-#' @param init Initial conditions for simulation provided. Allows overriding
-#'   if initial conditions start with an already infected population etc.
-#'   Default = NULL.
-#' @param dur_R Mean duration of naturally acquired immunity (days). Can be
-#'   time varying, with timing of changes given by tt_dur_R.
-#' @param tt_dur_R Timing of changes in duration of natural immunity.
-#' @param dur_V Mean duration of vaccine-derived immunity (days)
-#' @param vaccine_efficacy_infection Efficacy of vaccine against infection.
-#'   This parameter must either be length 1 numeric (a single efficacy for all
-#'   age groups) or length 17 numeric vector (an efficacy for each age group).
-#'   An efficacy of 1 will reduce FOI by 100 percent, an efficacy of 0.2 will
-#'   reduce FOI by 20 percent etc.
-#'   To specify changes in vaccine efficacy over time, vaccine efficacies must
-#'   be provided as a list, with each list element being the efficacy at each
-#'   time point specified by \code{tt_vaccine_efficacy_infection}. These
-#'   efficacies must also be length 1 numeric (a single efficacy for all age
-#'   groups)  or length 17 numeric vector (an efficacy for each age group)
-#' @param tt_vaccine_efficacy_infection Timing of changes in vaccine efficacy
-#'   against infection. Default = 0, which assumes fixed efficacy over time.
-#'   Must be the same length as the length of \code{vaccine_efficacy_infection}
-#'   when provided as a list. Time changing efficacies can occur in response to
-#'   changing vaccines being  given and dosing strategy changes.
-#' @param vaccine_efficacy_disease Efficacy of vaccine against severe
-#'   (requiring hospitilisation) disease (by age). This parameter must either be
-#'   length 1 numeric (a single efficacy for all age groups) or length 17
-#'   numeric vector (an efficacy for each age group). An efficacy of 1 will
-#'   reduce the probability of hospitalisation by 100 percent, an efficacy of
-#'   0.2 will reduce the probability of hospitalisation by 20 percent etc.
-#'   To specify changes in vaccine efficacy over time, vaccine efficacies must
-#'   be provided as a list, with each list element being the efficacy at each
-#'   time point specified by \code{tt_vaccine_efficacy_disease}. These
-#'   efficacies must also be length 1 numeric (a single efficacy for all age
-#'   groups)  or length 17 numeric vector (an efficacy for each age group).
-#' @param tt_vaccine_efficacy_disease Timing of changes in vaccine efficacy
-#'   against disease. Default = 0, which assumes fixed efficacy over time.
-#'   Must be the same length as the length of \code{vaccine_efficacy_disease}
-#'   when provided as a list. Time changing efficacies can occur in response to
-#'   changing vaccines being  given and dosing strategy changes.
-#' @param max_vaccine The maximum number of individuals who can be vaccinated per day.
-#' @param tt_vaccine Time change points for vaccine capacity (\code{max_vaccine}).
-#' @param dur_vaccine_delay Mean duration of period from vaccination to vaccine protection.
-#' @param vaccine_coverage_mat Vaccine coverage targets by age (columns) and priority (row)
-#' @param use_dde Use the dde solver (default is \code{TRUE})
-#' @param ... Additional arguments for solver
+#' @param countries Character vector of locations to include in the simulation.
+#'   Populations and baseline contact matrices are sourced for each country.
+#' @param age_breaks Numeric vector specifying the upper bound of each age
+#'   group. If \code{NULL}, the default 17-group structure is used.
+#' @param R0 Basic reproduction number for each time period specified in
+#'   \code{tt_R0}. Default is 3.
+#' @param tt_R0 Time points (in days) at which \code{R0} changes. Defaults to 0
+#'   (no change).
+#' @param beta_set Optional alternative parameterisation via beta rather than
+#'   \code{R0}. If \code{NULL}, beta is derived from \code{R0}.
+#' @param q_flight Daily probability of travelling by flight for each country.
+#' @param pi_travel_flight Matrix of destination probabilities for flight travel
+#'   (home country in rows, destination in columns).
+#' @param q_non_flight Daily probability of travelling by non-flight transport
+#'   for each country.
+#' @param pi_travel_non_flight Matrix of destination probabilities for
+#'   non-flight travel (home country in rows, destination in columns).
+#' @param time_period Length of the simulation in days. Default is 365.
+#' @param replicates Number of stochastic replicates. Currently fixed to 1 in
+#'   the underlying model.
+#' @param seed Random seed used for simulations. Default draws from
+#'   \code{runif(1, 0, 1e8)}.
+#' @param prob_hosp Probability of hospitalisation by age group.
+#' @param prob_death_hosp Probability of death among hospitalised cases by age
+#'   group.
+#' @param rel_infectiousness Relative infectiousness per age category.
+#' @param rel_infectiousness_vaccinated Relative infectiousness for vaccinated
+#'   individuals compared to unvaccinated individuals by age group.
+#' @param dur_E Mean duration of incubation period (days).
+#' @param dur_IMild Mean duration of mild infection (days).
+#' @param dur_ICase Mean duration from symptom onset to hospital admission
+#'   (days).
+#' @param dur_IHosp Mean duration of hospitalisation (days).
+#' @param dur_V Mean duration of vaccine-derived immunity (days).
+#' @param vaccine_efficacy_infection Vaccine efficacy against infection, either
+#'   a single value or a vector by age group.
+#' @param vaccine_efficacy_disease Vaccine efficacy against severe disease,
+#'   either a single value or a vector by age group.
+#' @param max_vaccine Maximum number of vaccine doses available per day.
+#' @param max_vaccine_set Optional matrix specifying vaccine capacity over time
+#'   and by location (rows are time, columns are countries).
+#' @param tt_vaccine Time points (in days) when vaccine capacity changes.
+#' @param dur_vaccine_delay Delay (in days) before vaccine-derived immunity
+#'   becomes effective.
+#' @param vaccine_coverage_mat Matrix of target vaccine coverage by time (rows)
+#'   and age group (columns).
+#' @param seeding_cases Initial number of cases used to seed the epidemic.
+#' @param seeding_age_order Optional integer vector controlling the order in
+#'   which seeds are allocated to age groups. If \code{NULL}, seeds are
+#'   distributed randomly within working ages.
+#' @param init Optional list of initial conditions for the simulation.
+#' @param use_dde Logical indicating whether to use the \code{dde}
+#'   implementation (default) or \code{deSolve}.
+#' @param ... Additional arguments passed to the underlying odin model
+#'   \code{run} method.
 #'
 #' @return Simulation output
 #' @export

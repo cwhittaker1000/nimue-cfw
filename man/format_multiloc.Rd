@@ -2,7 +2,7 @@
 % Please edit documentation in R/output_multiloc.R
 \name{format_multiloc}
 \alias{format_multiloc}
-\title{Format vaccine model output}
+\title{Format multi-location vaccine model output}
 \usage{
 format_multiloc(
   x,
@@ -13,22 +13,28 @@ format_multiloc(
 )
 }
 \arguments{
-\item{x}{nimue_simulation object}
+\item{x}{nimue_simulation object returned by \code{run()}.}
 
-\item{compartments}{Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names,
-e.g. \code{c("S", "E1", "E2")}}
+\item{compartments}{Vector of compartment names present in the model output,
+  e.g. \code{c("S", "R")}, or sub-compartment names (e.g.
+  \code{c("S", "E1", "E2")}).}
 
-\item{reduce_age}{Collapse age-dimension, calculating the total in the
-compartment (location is always retained if present).}
+\item{reduce_age}{Logical; if \code{TRUE} (default) collapse the age
+  dimension while retaining location indices, otherwise keep age-specific
+  counts.}
 
-\item{date_0}{Date of time 0 (e.g. "2020-03-01"), if specified a date column will be added}
+\item{date_0}{Optional Date for time 0 (e.g. "2020-03-01"); if provided a
+  \code{date} column is added.}
 
-\item{replicate}{Which replicate is being formatted. Default = 1}
+\item{replicate}{Replicate to format. Defaults to 1.}
 }
 \value{
-Formatted long data.frame
+A data.frame in long format containing the selected compartments,
+  time, replicate, and location (and optionally age group) labels.
 }
 \description{
-Take raw odin vaccine model output and formats in long format with the option to select
-variables and summarise over age groups. Output variables are ordered as in argument ordering.
+Takes raw odin vaccine model output from \code{run()} (with multiple
+locations) and returns a long data frame. Selected compartments are extracted
+(with cumulative outputs converted to daily increments) while optionally
+collapsing the age dimension. Location indices are preserved in the output.
 }

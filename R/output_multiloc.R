@@ -1,17 +1,23 @@
-#' Format vaccine model output
+#' Format multi-location vaccine model output
 #'
-#' Take raw odin vaccine model output and formats in long format with the option to select
-#' variables and summarise over age groups. Output variables are ordered as in argument ordering.
+#' Takes raw odin vaccine model output from \code{run()} (with multiple
+#' locations) and returns a long data frame. Selected compartments are extracted
+#' (with cumulative outputs converted to daily increments) while optionally
+#' collapsing the age dimension. Location indices are preserved in the output.
 #'
-#' @param x nimue_simulation object
-#' @param compartments Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names,
-#'   e.g. \code{c("S", "E1", "E2")}
-#' @param reduce_age Collapse age-dimension, calculating the total in the
-#'   compartment (location is always retained if present).
-#' @param date_0 Date of time 0 (e.g. "2020-03-01"), if specified a date column will be added
-#' @param replicate Which replicate is being formatted. Default = 1
+#' @param x nimue_simulation object returned by \code{run()}.
+#' @param compartments Vector of compartment names present in the model output,
+#'   e.g. \code{c("S", "R")}, or sub-compartment names (e.g.
+#'   \code{c("S", "E1", "E2")}).
+#' @param reduce_age Logical; if \code{TRUE} (default) collapse the age
+#'   dimension while retaining location indices, otherwise keep age-specific
+#'   counts.
+#' @param date_0 Optional Date for time 0 (e.g. "2020-03-01"); if provided a
+#'   \code{date} column is added.
+#' @param replicate Replicate to format. Defaults to 1.
 #'
-#' @return Formatted long data.frame
+#' @return A data.frame in long format containing the selected compartments,
+#'   time, replicate, and location (and optionally age group) labels.
 #' @export
 format_multiloc <- function(x,
                    compartments = c("S", "E",
@@ -74,11 +80,11 @@ format_multiloc <- function(x,
 # Internals
 # -------------------------------------------------------------------------
 
-#' Internals of Format vaccine model output as data.frame
+#' Internal helper for formatting multi-location output
 #' @inheritParams format
 #' @param index odin output index
-#' @param time time vector
-#' @param replicate output replicate number
+#' @param time Time vector from the odin model output
+#' @param replicate Output replicate number
 format_internal_multiloc <- function(x, compartments, reduce_age, index, time,
                             replicate){
 

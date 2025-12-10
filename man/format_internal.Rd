@@ -2,24 +2,26 @@
 % Please edit documentation in R/output.R
 \name{format_internal}
 \alias{format_internal}
-\title{Internals of Format vaccine model output as data.frame}
+\title{Internal helper for formatting single-location output}
 \usage{
 format_internal(x, compartments, reduce_age, index, time, replicate)
 }
 \arguments{
-\item{x}{squire_simulation object}
+\item{x}{nimue_simulation object returned by \code{run()}.}
 
-\item{compartments}{Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names, e.g. \code{c("S", "E1", "E2")}}
+\item{compartments}{Vector of compartment names present in the model output
+  (e.g. \code{c("S", "R")}) or sub-compartment names (e.g.
+  \code{c("S", "E1", "E2")}).}
 
-\item{reduce_age}{Collapse age-dimension, calculating the total in the
-compartment.}
+\item{reduce_age}{Logical; if \code{TRUE} (default) collapse the age
+  dimension, otherwise retain age-specific counts.}
 
-\item{index}{odin ouput index}
+\item{index}{odin output index}
 
-\item{time}{time vector}
+\item{time}{Time vector from the odin model output}
 
-\item{replicate}{outpu replicate number}
+\item{replicate}{Output replicate number}
 }
 \description{
-Internals of Format vaccine model output as data.frame
+Internal helper for formatting single-location output
 }

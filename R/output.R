@@ -1,27 +1,22 @@
 #' Format vaccine model output
 #'
-#' Take raw odin vaccine model output and formats in long format with the option to select
-#' variables and summarise over age groups. Output variables are ordered as in argument ordering.
+#' Takes raw odin vaccine model output from \code{run()} and returns a long
+#' data frame. Selected compartments are extracted (and cumulative outputs are
+#' converted to daily increments), with the option to collapse over age groups
+#' and to add calendar dates.
 #'
-#' @param x squire_simulation object
-#' @param compartments Vector of compartment names, e.g. \code{c("S", "R")}, or sub-compartment names, e.g. \code{c("S", "E1", "E2")}
-#' @param summaries Vector of summary names, which may be:
-#' \itemize{
-#'       \item{"deaths"}{ Deaths per day }
-#'       \item{"infections"}{ Infections per day. New infections (note this is currently a slightly different definitionto the main Squire mode)}
-#'       \item{"hospitilisations"}{ Hospitalisations per day (Note this takes into account hospital capacity)}
-#'       \item{"hospital_occupancy"}{ Occupied Hospital Beds }
-#'       \item{"ICU_occupancy"}{ Occupied ICU Beds }
-#'       \item{"hospital_demand}{ Required Hospital Beds }
-#'       \item{"ICU_demand}{ Required ICU Beds }
-#'       \item{"vaccinated"}{ Vaccines administered per day}
-#'       }
-#' @param reduce_age Collapse age-dimension, calculating the total in the
-#'   compartment.
-#' @param date_0 Date of time 0 (e.g. "2020-03-01"), if specified a date column will be added
-#' @param replicate Which replicate is being formatted. Default = 1
+#' @param x nimue_simulation object returned by \code{run()}.
+#' @param compartments Vector of compartment names present in the model output
+#'   (e.g. \code{c("S", "R")}) or sub-compartment names (e.g.
+#'   \code{c("S", "E1", "E2")}).
+#' @param reduce_age Logical; if \code{TRUE} (default) collapse the age
+#'   dimension, otherwise retain age-specific counts.
+#' @param date_0 Optional Date for time 0 (e.g. "2020-03-01"); if provided a
+#'   \code{date} column is added.
+#' @param replicate Replicate to format. Defaults to 1.
 #'
-#' @return Formatted long data.frame
+#' @return A data.frame in long format containing the selected compartments,
+#'   time, replicate, and (optionally) age group labels.
 #' @export
 format <- function(x,
                    compartments = c("S", "E",
@@ -74,11 +69,11 @@ format <- function(x,
   return(output)
 }
 
-#' Internals of Format vaccine model output as data.frame
+#' Internal helper for formatting single-location output
 #' @inheritParams format
-#' @param index odin ouput index
-#' @param time time vector
-#' @param replicate outpu replicate number
+#' @param index odin output index
+#' @param time Time vector from the odin model output
+#' @param replicate Output replicate number
 format_internal <- function(x, compartments, reduce_age, index, time,
                             replicate){
 
