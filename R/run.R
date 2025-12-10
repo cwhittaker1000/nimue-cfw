@@ -5,7 +5,9 @@
 #' @param age_breaks Numeric vector specifying the upper bound of each age
 #'   group. If \code{NULL}, the default 17-group structure is used.
 #' @param R0 Basic reproduction number for each time period specified in
-#'   \code{tt_R0}. Default is 3.
+#'   \code{tt_R0}. May be a numeric vector (shared across countries), a list of
+#'   per-country vectors, or a matrix with rows corresponding to `tt_R0` and
+#'   columns to `countries` (preferred for multi-country, time-varying inputs).
 #' @param tt_R0 Time points (in days) at which \code{R0} changes. Defaults to 0
 #'   (no change).
 #' @param beta_set Optional alternative parameterisation via beta rather than

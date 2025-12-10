@@ -6,7 +6,7 @@ tt_vaccine <- c(0, 30, 60)
 max_vaccine_set <- rbind(
   c(1000,  500),
   c(2000,  800),
-  c(3000, 1000)
+  c(3000, 20)
 )
 
 # simple, no mobility (defaults q_* = 0, pi_* = 0)

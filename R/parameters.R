@@ -270,14 +270,24 @@ parameters <- function(
   }
 
   ## Setting up the time-varying Rt for each country via the Rt matrix
-  if (is.list(R0)) {
+  if (is.matrix(R0)) {
+    Rt_mat <- R0
+    expected_dim <- c(n_tt, n_countries)
+    if (!identical(dim(Rt_mat), expected_dim)) {
+      stop("When `R0` is a matrix, it must have nrow = length(tt_R0) and ncol = length(countries).")
+    }
+
+  } else if (is.list(R0)) {
     if (length(R0) != n_countries) {
       stop("When `R0` is a list, it must have length equal to `length(countries)`.")
     }
-    Rt_mat <- matrix(NA_real_, nrow = n_countries, ncol = n_tt)
+    Rt_mat <- matrix(NA_real_, nrow = n_tt, ncol = n_countries)
 
     for (i in seq_len(n_countries)) {
       R0_i <- R0[[i]]
+      if (length(R0_i) != n_tt) {
+        stop("Each element of `R0` list must have length equal to `length(tt_R0)`.")
+      }
       Rt_mat[, i] <- R0_i
     }
 
@@ -293,14 +303,18 @@ parameters <- function(
 
     ## 2) Multiple countries: (i) one scalar per country (no time variation) -> length(R0) = n_countries, length(tt_R0) = 1
     ##                        (ii) one shared time-varying vector across countries -> length(R0) = length(tt_R0)
+    ##                        (iii) full time x country matrix supplied as a numeric vector
       if (length(R0) == n_countries && n_tt == 1L) { # (i) different scalar per country, single timepoint
         Rt_mat <- matrix(R0, ncol = n_countries, nrow = 1L)
       } else if (length(R0) == n_tt) {  # (ii) same trajectory across countries
         Rt_mat <- matrix(rep(R0, each = n_countries), ncol = n_countries, nrow = n_tt, byrow = TRUE)
+      } else if (length(R0) == n_tt * n_countries) {
+        Rt_mat <- matrix(R0, nrow = n_tt, ncol = n_countries, byrow = TRUE)
       } else {
         stop(
           "For multiple countries, `R0` must either:\n", "  * have length `length(countries)` with `length(tt_R0) == 1`, or\n",
-          "  * have length `length(tt_R0)` (shared trajectory across countries)."
+          "  * have length `length(tt_R0)` (shared trajectory across countries), or\n",
+          "  * be supplied as a matrix (preferred) or vector with length `length(tt_R0) * length(countries)`."
         )
       }
     }
