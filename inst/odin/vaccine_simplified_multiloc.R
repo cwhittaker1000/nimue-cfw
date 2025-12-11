@@ -26,10 +26,11 @@ initial(S[,,]) <- S_0[i,j,k]
 dim(S) <- c(N_age, N_vaccine,N_locations)
 
 ## ODEs for S compartments
-### Note: potentially need to replace vaccine_efficacy_infection_t with a constant vaccine_efficacy_infection
 deriv(S[,1,]) <- -(lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (vr[k] * vaccination_target[i,k] * S[i,j,k])
 deriv(S[,2,]) <- - (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) + (vr[k] * vaccination_target[i,k] * S[i,j-1,k]) - (gamma_vaccine[j] * S[i,j,k])
 deriv(S[,3:N_vaccine,]) <- (gamma_vaccine[j-1] * S[i,j-1,k]) - (lambda[i,k] * vaccine_efficacy_infection[i,j] * S[i,j,k]) - (gamma_vaccine[j] * S[i,j,k])
+### Note: check this - are we losing people out the end with  - (gamma_vaccine[j] * S[i,N_vaccine,k]) that aren't feeding back in anywhere?? Need to look into this!
+### --> this is fine as long as gamma_vaccine[N_vaccine] = 0 (need to check this is always the case in the run/parameters function)
 
 ## Outputs
 output(S_overall[,]) <- sum(S[i,,j])
@@ -102,7 +103,7 @@ dim(R_overall) <- c(N_age, N_locations)
 
 ################################################################################
 
-### ICase (ICase1 & ICase2): To-be hospitalised infection ######################
+### ICase: To-be hospitalised infection ######################
 
 ## Setting up initial conditions
 ICase_0[,,] <- user()
