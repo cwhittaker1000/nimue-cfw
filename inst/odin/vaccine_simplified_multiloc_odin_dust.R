@@ -214,7 +214,6 @@ gamma_IMild <- user() # rate of progression from mild infection to recovery
 ################################################################################
 
 ## n_E_latent[i,j,k] was drawn in the E block:
-##   n_E_toICase  ~ Binom(n_E_latent, prob_hosp)
 ##   n_E_toIMild  = n_E_latent - n_E_toICase
 n_E_toIMild[,,] <- n_E_latent[i, j, k] - n_E_toICase[i, j, k]
 dim(n_E_toIMild) <- c(N_age, N_vaccine, N_locations)
@@ -301,18 +300,10 @@ dim(R_0) <- c(N_age, N_vaccine, N_locations)
 initial(R[,,]) <- R_0[i, j, k]
 dim(R) <- c(N_age, N_vaccine, N_locations)
 
-## Parameters related to IHosp and R
-gamma_IHosp <- user()      # rate of leaving hospital (to R or D)
-gamma_IMild <- user()      # already defined, but used for IMild->R in IMild block
-
 ################################################################################
 ## 1) IHosp exits: split into recovered vs dead ################################
 ################################################################################
 ## NOTE: these will be used by both R (recovered) and D (dead)
-
-## Probability of leaving IHosp (either to R or D) over dt
-p_IHosp_exit[,,] <- 1 - exp(-gamma_IHosp * dt)
-dim(p_IHosp_exit) <- c(N_age, N_vaccine, N_locations)
 
 ## Total exits from IHosp
 n_IHosp_exit[,,] <- rbinom(IHosp[i, j, k], p_IHosp_exit[i, j, k])
@@ -527,17 +518,6 @@ dim(p_IHosp_prog) <- c(N_age, N_vaccine, N_locations)
 ## 2) Draw IHosp transition counts
 ################################################################################
 
-## Total exits from IHosp (to either R or D)
-n_IHosp_exit[,,] <- rbinom(IHosp[i, j, k], p_IHosp_exit[i, j, k])
-dim(n_IHosp_exit) <- c(N_age, N_vaccine, N_locations)
-
-## Split exits into death vs recovery
-n_IHosp_toD[,,] <- rbinom(n_IHosp_exit[i, j, k], prob_death_hosp[i, j])
-dim(n_IHosp_toD) <- c(N_age, N_vaccine, N_locations)
-
-n_IHosp_toR[,,] <- n_IHosp_exit[i, j, k] - n_IHosp_toD[i, j, k]
-dim(n_IHosp_toR) <- c(N_age, N_vaccine, N_locations)
-
 ## Vaccine-status progression within IHosp (j -> j+1)
 ## Use remaining IHosp after exit
 n_IHosp_prog[,,] <- rbinom(IHosp[i, j, k] - n_IHosp_exit[i, j, k], p_IHosp_prog[i, j, k])
@@ -684,19 +664,18 @@ dim(vaccine_efficacy_infection) <- c(N_age, N_vaccine)
 gamma_vaccine[] <- user() # Vector of vaccine progression parameters by vaccination status (First = 0 as handled separately as time-varying vaccination rate, Last = 0 as no progression from "previously vaccinated group)
 dim(gamma_vaccine) <- N_vaccine
 
-## Interpolation of vaccination rate over time
-## Single loc version
-# mv <- interpolate(tt_vaccine, max_vaccine, "constant")
-# tt_vaccine[] <- user()
-# max_vaccine[] <- user()
-# dim(tt_vaccine) <- user()
-# dim(max_vaccine) <- length(tt_vaccine)
+## Vaccination rate over time
 
-tt_vaccine[] <- user()
-dim(tt_vaccine) <- user()  # length T
-max_vaccine_set[ , ] <- user()  # time x location
-dim(max_vaccine_set) <- c(length(tt_vaccine), N_locations)
-mv[] <- interpolate(tt_vaccine, max_vaccine_set, "constant")
+## Per-day max vaccine capacity: rows = day, cols = location
+max_vaccine_day[, ] <- user()
+N_days <- user()
+dim(max_vaccine_day) <- c(N_days, N_locations)
+
+## Map continuous time -> day index (1-based), capped at N_days
+day_index <- if (as.integer(time) >= N_days) N_days else as.integer(time) + 1L
+
+## Current per-location capacity at this time step
+mv[] <- max_vaccine_day[day_index, j]
 dim(mv) <- N_locations
 
 # Track the proportion who have received vaccine in each age group
