@@ -3,13 +3,19 @@ library(ggplot2)
 library(nimue)
 
 ## check final size is right when specifying particular R0s - check vs squire
+q_flight      <- c(0, 0)
+q_non_flight  <- c(0, 0)
+pi_travel_flight     <- matrix(c(0,0, 0,0), nrow = 2, byrow = TRUE)
+pi_travel_non_flight <- matrix(c(0,0, 0,0), nrow = 2, byrow = TRUE)
 
 x <- run(countries = c("Nigeria", "United Kingdom"),
          R0 = list(c(2, 2), c(1.2, 1.2)),
-         q = c(0, 0.9),
-         pi_travel = matrix(data = c(0, 1, 1, 0), nrow = 2, ncol = 2, byrow = TRUE),
+         q_flight             = q_flight,
+         q_non_flight         = q_non_flight,
+         pi_travel_flight     = pi_travel_flight,
+         pi_travel_non_flight = pi_travel_non_flight,
          tt_R0 = c(0, 220),
-         seeding_cases = c(10, 10),
+         seeding_cases = c(10, 5),
          time_period = 1000)
 
 squire:::get_population("France")
