@@ -123,7 +123,7 @@ parameters <- function(
   max_vaccine_set = NULL,
   tt_vaccine,
   dur_vaccine_delay,
-  vaccine_coverage_mat) {
+  vaccine_coverage_mat = NULL) {
 
   ## ---------------------------------------------------------------------------
   ## 1. Load raw population and contact matrices (canonical 17 age groups)
@@ -426,8 +426,12 @@ parameters <- function(
     stop("`vaccine_efficacy_disease` must have length 1, 17, or length equal to the number of age groups implied by `age_breaks`.")
   }
   ## 5b. Check vaccine_coverage_mat has N_age columns
-  if (is.null(dim(vaccine_coverage_mat))) {
-    vaccine_coverage_mat <- matrix(vaccine_coverage_mat, nrow = 1)
+  if (is.null(vaccine_coverage_mat)) {
+    vaccine_coverage_mat <- matrix(rep(0, N_age), nrow = 1)
+  } else {
+    if (is.null(dim(vaccine_coverage_mat))) {
+      vaccine_coverage_mat <- matrix(vaccine_coverage_mat, nrow = 1)
+    }
   }
   if (ncol(vaccine_coverage_mat) != N_age) {
     stop("`vaccine_coverage_mat` must have N_age = ", N_age, " columns (one per age group). Got ", ncol(vaccine_coverage_mat), " columns instead.")

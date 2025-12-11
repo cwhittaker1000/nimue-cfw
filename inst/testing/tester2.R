@@ -1,6 +1,9 @@
 # devtools::load_all()  # from the package root, or library(yourpkg)
 
 countries <- c("France", "United Kingdom")
+library(nimue)
+
+squire:::get_lmic_countries()
 
 tt_vaccine <- c(0, 30, 60)
 max_vaccine_set <- rbind(
@@ -8,7 +11,7 @@ max_vaccine_set <- rbind(
   c(2000,  800),
   c(3000, 20)
 )
-
+squire::income_group$country
 # simple, no mobility (defaults q_* = 0, pi_* = 0)
 sim <- run(
   countries        = countries,
@@ -45,4 +48,24 @@ sim2 <- run(
   pi_travel_flight     = pi_travel_flight,
   pi_travel_non_flight = pi_travel_non_flight,
   use_dde              = TRUE
+)
+
+tt_vaccine <- c(0, 30, 60)
+max_vaccine_set <- rbind(
+  c(1000,  500),
+  c(2000,  800),
+  c(3000, 20)
+)
+
+# simple, no mobility (defaults q_* = 0, pi_* = 0)
+sim <- run(
+  countries        = squire::income_group$country,
+  R0               = 3,
+  tt_R0            = 0,
+  time_period      = 60,
+  seeding_cases    = 20,
+  max_vaccine      = 0,
+  max_vaccine_set  = NULL,
+  tt_vaccine       = 0,
+  use_dde          = TRUE
 )

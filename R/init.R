@@ -31,12 +31,18 @@ init <- function(population_list, seeding_cases, seeding_age_order = NULL, init 
     ## ------------------------------------------------------------------------
     ## 2. Check / expand seeding_cases
     ## ------------------------------------------------------------------------
-    if (length(seeding_cases) == 1) {
-      seeding_cases <- rep(seeding_cases, N_locations)
-    } else if (length(seeding_cases) != N_locations) {
-      stop("seeding_cases must be length 1 or length N_locations")
+    if (!is.numeric(seeding_cases)) {
+      stop("`seeding_cases` must be numeric.")
+    }
+    if (any(seeding_cases < 0)) {
+      stop("`seeding_cases` must be >= 0 for all locations.")
     }
 
+    if (length(seeding_cases) == 1L) {
+      seeding_cases <- rep(seeding_cases, N_locations)
+    } else if (length(seeding_cases) != N_locations) {
+      stop("`seeding_cases` must be length 1 or length N_locations (", N_locations, ").")
+    }
     ## ------------------------------------------------------------------------
     ## 3. Check / expand seeding_age_order
     ## ------------------------------------------------------------------------
@@ -45,7 +51,7 @@ init <- function(population_list, seeding_cases, seeding_age_order = NULL, init 
         # Assume same order for all locations
         seeding_age_order <- rep(list(seeding_age_order), N_locations)
       } else if (length(seeding_age_order) != N_locations) {
-        stop("seeding_age_order must be NULL, a vector, or a list of length N_locations")
+        stop("`seeding_age_order` must be NULL, a vector, or a list of length N_locations")
       }
 
       # Optional: sanity check that indices are within [1, N_age]
@@ -110,8 +116,7 @@ init <- function(population_list, seeding_cases, seeding_age_order = NULL, init 
         remainder             <- seeding_cases_loc %% N_age
         if (remainder > 0) {
           for (s in seq_len(remainder)) {
-            raw_seeding_cases[seeding_age_order_loc[s]] <-
-              raw_seeding_cases[seeding_age_order_loc[s]] + 1
+            raw_seeding_cases[seeding_age_order_loc[s]] <- raw_seeding_cases[seeding_age_order_loc[s]] + 1
           }
         }
       }
