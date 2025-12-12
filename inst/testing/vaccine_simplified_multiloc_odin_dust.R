@@ -42,7 +42,7 @@ p_S_inf[,,] <- 1 - exp(-lambda[i, k] * vaccine_efficacy_infection[i, j] * dt)
 dim(p_S_inf) <- c(N_age, N_vaccine, N_locations)
 
 ## Vaccination probability for unvaccinated susceptibles (j = 1) - i.e. note this only applies vaccination stratum 1
-p_S_vacc[ , ] <- 1 - exp(-vr[k] * vaccination_target[i, k] * dt) ## consider making this not stochastic
+p_S_vacc[ , ] <- 1 - exp(-vr[j] * vaccination_target[i, j] * dt) ## consider making this not stochastic
 dim(p_S_vacc) <- c(N_age, N_locations)
 
 ## Progression probability between vaccine strata (j -> j+1)
@@ -58,7 +58,7 @@ dim(n_S_inf) <- c(N_age, N_vaccine, N_locations)
 
 ## Vaccination from S[,1,] into S[,2,] - use remaining S[,1,] after infection to avoid double-counting
 ### have to make sure here that we don't inadvertently make this a negative number - perhaps a check for S[i, 1, k] - n_S_inf[i, 1, k] > 0
-n_S_vacc[, ] <- rbinom(S[i, 1, k] - n_S_inf[i, 1, k], p_S_vacc[i, k])
+n_S_vacc[, ] <- rbinom(S[i, 1, j] - n_S_inf[i, 1, j], p_S_vacc[i, j])
 dim(n_S_vacc) <- c(N_age, N_locations)
 
 ## Progression between vaccine strata j -> j+1 (j >= 2)
@@ -120,7 +120,7 @@ dim(p_E_latent) <- c(N_age, N_vaccine, N_locations)
 
 ## Vaccination probability for latent E in stratum 1 (E[,1,] -> E[,2,])
 ## Same vaccination hazard as S[,1,]
-p_E_vacc[, ] <- 1 - exp(-vr[k] * vaccination_target[i, k] * dt)
+p_E_vacc[, ] <- 1 - exp(-vr[j] * vaccination_target[i, j] * dt)
 dim(p_E_vacc) <- c(N_age, N_locations)
 
 ## Vaccine-status progression probability between latent strata (j -> j+1)
@@ -138,7 +138,7 @@ dim(n_E_latent) <- c(N_age, N_vaccine, N_locations)
 
 ## Vaccination from E[,1,] into E[,2,]
 ## Use remaining E[,1,] after latent progression to avoid double-counting
-n_E_vacc[, ] <- rbinom(E[i, 1, k] - n_E_latent[i, 1, k], p_E_vacc[i, k])
+n_E_vacc[, ] <- rbinom(E[i, 1, j] - n_E_latent[i, 1, j], p_E_vacc[i, j])
 dim(n_E_vacc) <- c(N_age, N_locations)
 
 ## Vaccine-status progression between latent strata j -> j+1 (j >= 2)
@@ -184,8 +184,6 @@ update(E[, 4, ]) <- E[i, 4, k] +
   n_S_inf[i, 4, k] +     # inflow from S4
   n_E_prog[i, 3, k] -    # inflow from E3
   n_E_latent[i, 4, k]    # outflow to infectious states
-
-dim(E) <- c(N_age, N_vaccine, N_locations)
 
 ################################################################################
 ## 4) Outputs e.g. E_overall
@@ -321,7 +319,7 @@ dim(n_IHosp_toR) <- c(N_age, N_vaccine, N_locations)
 ################################################################################
 
 ## Vaccination probability for R[,1,] -> R[,2,]  (same hazard as S[,1,])
-p_R_vacc[, ] <- 1 - exp(-vr[k] * vaccination_target[i, k] * dt)
+p_R_vacc[, ] <- 1 - exp(-vr[j] * vaccination_target[i, j] * dt)
 dim(p_R_vacc) <- c(N_age, N_locations)
 
 ## Vaccine-status progression probability between R strata (j -> j+1)
@@ -334,7 +332,7 @@ dim(p_R_prog) <- c(N_age, N_vaccine, N_locations)
 ################################################################################
 
 ## Vaccination from R[,1,] into R[,2,]
-n_R_vacc[, ] <- rbinom(R[i, 1, k], p_R_vacc[i, k])
+n_R_vacc[, ] <- rbinom(R[i, 1, j], p_R_vacc[i, j])
 dim(n_R_vacc) <- c(N_age, N_locations)
 
 ## Vaccine-status progression R[,j] -> R[,j+1] (j >= 2)
@@ -381,8 +379,6 @@ update(R[, 4, ]) <- R[i, 4, k] +
   n_IMild_rec[i, 4, k] +
   n_IHosp_toR[i, 4, k] +
   n_R_prog[i, 3, k]
-
-dim(R) <- c(N_age, N_vaccine, N_locations)
 
 ################################################################################
 ## 5) Outputs e.g. R_overall ###################################################
@@ -477,8 +473,6 @@ update(ICase[, 4, ]) <- ICase[i, 4, k] +
   n_ICase_prog[i, 3, k] -
   n_ICase_toIHosp[i, 4, k]
 
-dim(ICase) <- c(N_age, N_vaccine, N_locations)
-
 ################################################################################
 ## 5) Outputs e.g. ICase_overall
 ################################################################################
@@ -562,8 +556,6 @@ update(IHosp[, 4, ]) <- IHosp[i, 4, k] +
   n_IHosp_prog[i, 3, k] -
   n_IHosp_exit[i, 4, k]
 
-dim(IHosp) <- c(N_age, N_vaccine, N_locations)
-
 ################################################################################
 ## 4) Outputs e.g. IHosp_overall
 ################################################################################
@@ -636,8 +628,6 @@ update(D[, 4, ]) <- D[i, 4, k] +
   n_IHosp_toD[i, 4, k] +
   n_D_prog[i, 3, k]
 
-dim(D) <- c(N_age, N_vaccine, N_locations)
-
 ################################################################################
 ## 4) Outputs e.g. D_overall
 ################################################################################
@@ -675,7 +665,7 @@ dim(max_vaccine_day) <- c(N_days, N_locations)
 day_index <- if (as.integer(time) >= N_days) N_days else as.integer(time) + 1L
 
 ## Current per-location capacity at this time step
-mv[] <- max_vaccine_day[day_index, j]
+mv[] <- max_vaccine_day[day_index, i]
 dim(mv) <- N_locations
 
 # Track the proportion who have received vaccine in each age group
@@ -764,11 +754,10 @@ dim(pi_travel_non_flight) <- c(N_locations, N_locations)  # home (i), dest (j)
 ## Defining between-location mixing matrix (comprising a mixing matrix for between locations, initially assuming no age-specific mobility)
 
 # Interpolation for beta ## Double check I HAVE THE MATRIX BETA_SET THE RIGHT WAY ROUND HERE I THINK BASED ON https://mrc-ide.github.io/odin/articles/odin.html#interpolating-functions
-tt_beta[] <- user()
-beta_set[,] <- user()
-beta[] <- interpolate(tt_beta, beta_set, "constant")
-dim(tt_beta) <- user()
-dim(beta_set) <- c(length(tt_beta), N_locations)
+# beta schedule: rows = day (1..N_days), cols = location (1..N_locations)
+beta_day[, ] <- user()
+dim(beta_day) <- c(N_days, N_locations)
+beta[] <- beta_day[day_index, i]
 dim(beta) <- N_locations
 
 # Generating Force of Infection
@@ -815,19 +804,3 @@ lambda[,] <- (1 - (q_flight[j] + q_non_flight[j])) * lambda_local[i, j] +
   q_flight[j] * lambda_travel_flight[i, j] +
   q_non_flight[j] * lambda_travel_non_flight[i, j]
 dim(lambda) <- c(N_age, N_locations)
-
-################################################################################
-### Output #####################################################################
-################################################################################
-
-# Unvaccinated
-output(unvaccinated[,]) <- sum(S[i,1,j]) + sum(E[i,1,j]) + sum(IMild[i,1,j]) + sum(ICase[i,1,j]) + sum(IHosp[i,1,j]) + sum(R[i,1,j]) + sum(D[i,1,j])
-dim(unvaccinated) <- c(N_age, N_locations)
-# Vaccinated
-output(vaccinated[,]) <- sum(S[i,2:N_vaccine,j]) + sum(E[i,2:N_vaccine,j]) + sum(IMild[i,2:N_vaccine,j]) + sum(ICase[i,2:N_vaccine,j]) + sum(IHosp[i,2:N_vaccine,j]) + sum(R[i,2:N_vaccine,j]) + sum(D[i,2:N_vaccine,j])
-dim(vaccinated) <- c(N_age, N_locations)
-
-output(N[,]) <- pop_size[i,j] + sum(D[i,,j])
-dim(N) <- c(N_age, N_locations)
-################################################################################
-
